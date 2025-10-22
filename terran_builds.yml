@@ -1,0 +1,148 @@
+# Save the game opening and result to disk?
+# Setting to `True` allows Ares to select a new opening after defeat
+UseData: True
+# How should we choose a build?
+# Use `Cycle` for a simple build cycle on defeat
+# Use `WinrateBased` to use winrates to select a build
+BuildSelection: WinrateBased
+# For each Race / Opponent ID choose a build selection
+BuildChoices:
+    # test_123 is active if Debug: True (set via a `config.yml` file)
+    test_123:
+        BotName: Test
+        Cycle:
+            - ThorDrop
+
+    Protoss:
+        BotName: ProtossRace
+        Cycle:
+            - DummyOpening
+
+    Random:
+        BotName: RandomRace
+        Cycle:
+            - DummyOpening
+
+    Terran:
+        BotName: TerranRace
+        Cycle:
+            - DummyOpening
+
+    Zerg:
+        BotName: ZergRace
+        Cycle:
+            - DummyOpening
+
+Builds:
+    BattleCruiserRush:
+      ConstantWorkerProductionTill: 0
+      PersistentWorker: False
+      OpeningBuildOrder:
+        - 12 supply
+        - 12 gas
+        - 12 barracks
+        - 12 scv *3
+        - 15 factory
+        - 15 marine
+        - 15 orbital
+        - 15 gas
+        - 15 marine
+        - 15 scv *2
+        - 17 starport
+        - 17 marine
+        - 17 scv *2
+        - 17 marine
+        - 19 supply
+        - 19 fusioncore
+        - 19 starporttechlab
+
+    # banshee follow up into scv allin
+    HellionDrop:
+      - 14 supplydepot
+    MassMine:
+      ConstantWorkerProductionTill: 0
+      PersistentWorker: False
+      OpeningBuildOrder:
+        - 12 supply
+        - 12 scv *2
+        - 14 barracks
+        - 14 gas
+        - 14 scv
+        - 14 gas
+        - 14 scv
+        - 0 reaper
+        - 0 orbital
+        - 0 factory
+        - 0 scv
+        - 0 marine
+        - 0 barracksreactor
+        - 0 supply
+        - 0 scv *2
+        - 0 marine
+        - 0 armory
+        - 0 factorytechlab
+
+    # proxy rax with marine, once orbital is done pull scvs
+    MightBeAWorkerRush:
+      - 14 supplydepot
+    # marine/tanks/static defence -> do nothing till mined out, then attack with everything!
+    TwoBaseTurtle:
+      - 14 supplydepot
+    # pull scvs
+    ProxyMarauder:
+      - 14 supplydepot
+    ProxyRaxInMain:
+      - 14 supplydepot
+    # add hellions when possible
+    Reapers:
+      ConstantWorkerProductionTill: 0
+      PersistentWorker: False
+      OpeningBuildOrder:
+        - 12 supply
+        - 12 scv *2
+        - 14 barracks
+        - 14 gas
+        - 14 scv
+        - 14 gas
+        - 14 scv
+        - 14 barracks
+        - 0 reaper
+        - 0 orbital
+        - 0 barracks
+        - 0 reaper *2
+        - 0 scv
+        - 0 supply
+        - 0 barracks
+        - 0 reaper *3
+        - 0 factory
+
+    # stim / shields / scv allin
+    ThreeRaxAllin:
+      - 14 supplydepot
+    # marine / scv allin
+    ThorDrop:
+      ConstantWorkerProductionTill: 0
+      PersistentWorker: False
+      OpeningBuildOrder:
+        - 12 supply
+        - 12 scv *2
+        - 14 barracks
+        - 14 gas
+        - 14 scv
+        - 14 gas
+        - 14 scv
+        - 0 reaper
+        - 0 orbital
+        - 0 factory
+        - 0 scv
+        - 0 marine
+        - 0 supply
+        - 0 scv *2
+        - 0 marine
+        - 0 armory
+        - 0 factorytechlab
+        - 0 starport
+        - 0 marine
+        - 0 supply
+
+

@@ -190,6 +190,7 @@ def on_error(func, path, exc_info):
     else:
         raise
 
+
 def try_build_cython_extensions(build_env=None):
     """
     Attempt to build Cython extensions with different approaches
@@ -211,7 +212,7 @@ def try_build_cython_extensions(build_env=None):
             "cd cython-extensions-sc2 && poetry run pip install -e .",
             shell=True,
             env=build_env,
-            check=True
+            check=True,
         )
         return True
     except subprocess.CalledProcessError:
@@ -223,7 +224,7 @@ def try_build_cython_extensions(build_env=None):
                 "cd cython-extensions-sc2 && poetry run python setup.py build_ext --inplace",
                 shell=True,
                 env=build_env,
-                check=True
+                check=True,
             )
             return True
         except subprocess.CalledProcessError:
@@ -260,7 +261,6 @@ if __name__ == "__main__":
 
     # Still run poetry build to create the distribution package
     # run("cd cython-extensions-sc2 && poetry build", shell=True)
-
 
     # clone sc2-helper
     # run("git clone https://github.com/danielvschoor/sc2-helper", shell=True)
