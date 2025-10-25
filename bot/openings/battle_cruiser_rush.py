@@ -9,11 +9,9 @@ from bot.combat.base_combat import BaseCombat
 from bot.combat.battle_cruiser_combat import BattleCruiserCombat
 from bot.combat.ground_range_combat import GroundRangeCombat
 from bot.openings.opening_base import OpeningBase
-from bot.openings.reapers import Reapers
 
 
 class BattleCruiserRush(OpeningBase):
-    _worker_rush_activated: bool
     _battle_cruiser_combat: BaseCombat
     _ground_range_combat: BaseCombat
 

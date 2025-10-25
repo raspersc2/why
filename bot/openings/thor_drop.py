@@ -1,6 +1,4 @@
 import numpy as np
-from sc2.ids.ability_id import AbilityId
-
 from ares import AresBot
 from ares.behaviors.combat import CombatManeuver
 from ares.behaviors.combat.individual import AMove, KeepUnitSafe
@@ -10,9 +8,10 @@ from ares.consts import ALL_STRUCTURES, UnitRole, UnitTreeQueryType
 from cython_extensions import (
     cy_center,
     cy_closest_to,
-    cy_unit_pending,
     cy_in_pathing_grid_ma,
+    cy_unit_pending,
 )
+from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.ids.upgrade_id import UpgradeId
 from sc2.position import Point2
@@ -90,8 +89,11 @@ class ThorDrop(OpeningBase):
             grid=self.ai.mediator.get_ground_grid,
             sensitivity=2,
         ):
-            if len(path) > 22:
-                self.target_healing_pos = path[22]
+            # make sure the path has some kind of length
+            # the actual length is likely a lot longer
+            if len(path) > 5:
+                # take the second from the end point
+                self.target_healing_pos = path[-2]
 
     async def on_step(self) -> None:
         await self._reapers.on_step()
@@ -186,7 +188,6 @@ class ThorDrop(OpeningBase):
         keys_to_remove: list[int] = []
         ground_grid: np.ndarray = self.ai.mediator.get_ground_grid
         for medivac_tag, tracker_info in self._medivac_to_thor.items():
-            current_target: Point2 = tracker_info["target"]
             medivac: Unit | None = self.ai.unit_tag_dict.get(medivac_tag)
             thor: Unit | None = self.ai.unit_tag_dict.get(list(tracker_info["tags"])[0])
             if tracker_info["healing"]:

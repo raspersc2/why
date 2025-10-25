@@ -4,6 +4,7 @@ from itertools import cycle
 from ares import AresBot
 from ares.behaviors.macro import (
     AutoSupply,
+    BuildStructure,
     BuildWorkers,
     ExpansionController,
     GasBuildingController,
@@ -54,8 +55,22 @@ class OpeningBase(metaclass=ABCMeta):
         freeflow_mode: bool = True,
         can_expand: bool = True,
         upgrade_to_pfs: bool = True,
+        production_controller_enabled: bool = True,
+        num_one_base_workers: int = 20,
     ) -> None:
+        if (
+            upgrade_to_pfs
+            and not self.ai.structure_present_or_pending(UnitTypeId.ENGINEERINGBAY)
+            and len(self.ai.townhalls) > 1
+        ):
+            self.ai.register_behavior(
+                BuildStructure(build_location, UnitTypeId.ENGINEERINGBAY)
+            )
+
         macro_plan: MacroPlan = MacroPlan()
+
+        if production_controller_enabled:
+            macro_plan.add(ProductionController(army_comp, build_location))
 
         macro_plan.add(AutoSupply(self.ai.start_location))
         macro_plan.add(GasBuildingController(100))
@@ -67,12 +82,15 @@ class OpeningBase(metaclass=ABCMeta):
         else:
             macro_plan.add(UpgradeCCs(UnitTypeId.ORBITALCOMMAND, prioritize=True))
 
+        if add_upgrades:
+            macro_plan.add(UpgradeController(upgrades, build_location))
+
         macro_plan.add(
             SpawnController(
                 army_composition_dict=army_comp, freeflow_mode=freeflow_mode
             )
         )
-        macro_plan.add(ProductionController(army_comp, build_location))
+
         if add_hellions:
             macro_plan.add(
                 SpawnController(
@@ -84,15 +102,13 @@ class OpeningBase(metaclass=ABCMeta):
             )
 
         num_workers: int = (
-            20
+            num_one_base_workers
             if len(self.ai.townhalls) <= 1
             else (min(60, len(self.ai.townhalls) * 22))
         )
 
         macro_plan.add(BuildWorkers(num_workers))
 
-        if add_upgrades:
-            macro_plan.add(UpgradeController(upgrades, build_location))
         if can_expand:
             macro_plan.add(ExpansionController(100))
         self.ai.register_behavior(macro_plan)

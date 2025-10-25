@@ -5,13 +5,13 @@ import numpy as np
 from ares import ManagerMediator
 from ares.behaviors.combat import CombatManeuver
 from ares.behaviors.combat.individual import (
+    AMove,
     DropCargo,
     KeepUnitSafe,
     PathUnitToTarget,
     PickUpCargo,
     ShootTargetInRange,
     StutterUnitBack,
-    AMove,
 )
 from ares.consts import WORKER_TYPES, UnitRole, UnitTreeQueryType
 from cython_extensions import cy_center

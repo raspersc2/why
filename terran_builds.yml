@@ -11,7 +11,7 @@ BuildChoices:
     test_123:
         BotName: Test
         Cycle:
-            - ThorDrop
+            - MassMine
 
     Protoss:
         BotName: ProtossRace
@@ -74,13 +74,14 @@ Builds:
         - 0 orbital
         - 0 factory
         - 0 scv
-        - 0 marine
         - 0 barracksreactor
         - 0 supply
-        - 0 scv *2
-        - 0 marine
+        - 0 scv
         - 0 armory
-        - 0 factorytechlab
+        - 0 scv
+        - 0 factory
+        - 0 addonswap factory barracksreactor
+        - 0 scv
 
     # proxy rax with marine, once orbital is done pull scvs
     MightBeAWorkerRush:
