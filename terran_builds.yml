@@ -11,10 +11,10 @@ BuildChoices:
     test_123:
         BotName: Test
         Cycle:
-#            - MassMine
+            - MassMine
 #            - Reapers
 #            - BattleCruiserRush
-            - ThorDrop
+#            - ThorDrop
 
     Protoss:
         BotName: ProtossRace
