@@ -1,15 +1,4 @@
 from ares import AresBot
-from ares.behaviors.macro import (
-    AutoSupply,
-    BuildWorkers,
-    ExpansionController,
-    GasBuildingController,
-    MacroPlan,
-    ProductionController,
-    SpawnController,
-    UpgradeCCs,
-    UpgradeController,
-)
 from ares.managers.squad_manager import UnitSquad
 from cython_extensions import cy_closest_to
 from sc2.ids.unit_typeid import UnitTypeId

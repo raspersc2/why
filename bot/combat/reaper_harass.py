@@ -10,8 +10,6 @@ from ares.behaviors.combat.individual import (
     PathUnitToTarget,
     ReaperGrenade,
     ShootTargetInRange,
-    StutterUnitBack,
-    StutterUnitForward,
     UseAbility,
 )
 from ares.consts import (
@@ -23,12 +21,10 @@ from ares.consts import (
 )
 from ares.managers.manager_mediator import ManagerMediator
 from cython_extensions import (
-    cy_attack_ready,
     cy_center,
     cy_closest_to,
     cy_distance_to,
     cy_distance_to_squared,
-    cy_in_attack_range,
 )
 from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId as UnitID

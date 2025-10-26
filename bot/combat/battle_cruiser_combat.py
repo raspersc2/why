@@ -3,16 +3,10 @@ from typing import TYPE_CHECKING, Union
 
 import numpy as np
 from ares.behaviors.combat import CombatManeuver
-from ares.behaviors.combat.individual import (
-    KeepUnitSafe,
-    PathUnitToTarget,
-    ShootTargetInRange,
-    StutterUnitBack,
-    UseAbility,
-)
-from ares.consts import ALL_STRUCTURES, UnitTreeQueryType
+from ares.behaviors.combat.individual import KeepUnitSafe, PathUnitToTarget, UseAbility
+from ares.consts import UnitTreeQueryType
 from ares.managers.manager_mediator import ManagerMediator
-from cython_extensions import cy_closest_to, cy_distance_to_squared
+from cython_extensions import cy_distance_to_squared
 from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId as UnitID
 from sc2.position import Point2

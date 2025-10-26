@@ -1,33 +1,31 @@
 from random import choice
 from typing import Callable
 
-from sc2.ids.ability_id import AbilityId
-
 from ares import AresBot
 from ares.behaviors.combat import CombatManeuver
 from ares.behaviors.combat.individual import DropCargo, KeepUnitSafe, PathUnitToTarget
 from ares.behaviors.macro import BuildStructure
 from ares.consts import TOWNHALL_TYPES
 from cython_extensions import (
+    cy_center,
     cy_distance_to_squared,
     cy_in_pathing_grid_ma,
     cy_sorted_by_distance_to,
     cy_towards,
-    cy_center,
     cy_unit_pending,
 )
+from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.ids.upgrade_id import UpgradeId
 from sc2.position import Point2
 from sc2.unit import Unit
 from sc2.units import Units
-
-from bot.combat.mine_combat import MineCombat
-from bot.openings.battle_cruiser_rush import BattleCruiserRush
 from src.ares.consts import UnitRole
 
 from bot.combat.base_combat import BaseCombat
 from bot.combat.medivac_mine_drops import MedivacMineDrops
+from bot.combat.mine_combat import MineCombat
+from bot.openings.battle_cruiser_rush import BattleCruiserRush
 from bot.openings.opening_base import OpeningBase
 from bot.openings.reapers import Reapers
 

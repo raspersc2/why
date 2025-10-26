@@ -18,8 +18,6 @@ from ares.cache import property_cache_once_per_frame
 from ares.consts import UnitRole
 from cython_extensions import cy_closest_to, cy_find_units_center_mass
 from cython_extensions.geometry import cy_distance_to
-from sc2.ids.ability_id import AbilityId
-from sc2.ids.buff_id import BuffId
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.ids.upgrade_id import UpgradeId
 from sc2.position import Point2

@@ -11,27 +11,42 @@ BuildChoices:
     test_123:
         BotName: Test
         Cycle:
-            - MassMine
+#            - MassMine
+#            - Reapers
+#            - BattleCruiserRush
+            - ThorDrop
 
     Protoss:
         BotName: ProtossRace
         Cycle:
-            - DummyOpening
+            - MassMine
+            - Reapers
+            - BattleCruiserRush
+            - ThorDrop
 
     Random:
         BotName: RandomRace
         Cycle:
-            - DummyOpening
+            - MassMine
+            - Reapers
+            - BattleCruiserRush
+            - ThorDrop
 
     Terran:
         BotName: TerranRace
         Cycle:
-            - DummyOpening
+            - MassMine
+            - Reapers
+            - BattleCruiserRush
+            - ThorDrop
 
     Zerg:
         BotName: ZergRace
         Cycle:
-            - DummyOpening
+            - MassMine
+            - Reapers
+            - BattleCruiserRush
+            - ThorDrop
 
 Builds:
     BattleCruiserRush:

@@ -11,10 +11,8 @@ from ares.behaviors.combat.individual import (
     PathUnitToTarget,
     PickUpCargo,
     ShootTargetInRange,
-    StutterUnitBack,
 )
-from ares.consts import WORKER_TYPES, UnitRole, UnitTreeQueryType
-from cython_extensions import cy_center
+from ares.consts import UnitRole, UnitTreeQueryType
 from sc2.ids.ability_id import AbilityId
 from sc2.position import Point2
 from sc2.unit import Unit

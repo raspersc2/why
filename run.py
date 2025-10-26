@@ -1,11 +1,11 @@
+import platform
 import random
 import sys
 from os import path
 from pathlib import Path
-import platform
 from typing import List
-from loguru import logger
 
+from loguru import logger
 from sc2 import maps
 from sc2.data import AIBuild, Difficulty, Race
 from sc2.main import run_game
@@ -84,11 +84,10 @@ def main():
 
             # see if user has any recent ladder maps
             map_list: List[str] = [
-                "AbyssalReefAIE",
-                "AutomationAIE",
-                "EphemeronAIE",
-                "InterloperAIE",
-                "ThunderbirdAIE",
+                "PylonAIE_v4",
+                "PersephoneAIE_v4",
+                "TorchesAIE_v4",
+                "IncorporealAIE_v4",
             ]
 
         random_race = random.choice([Race.Zerg, Race.Terran, Race.Protoss])
@@ -97,7 +96,7 @@ def main():
             maps.get(random.choice(map_list)),
             [
                 bot1,
-                Computer(random_race, Difficulty.CheatVision, ai_build=AIBuild.Macro),
+                Computer(random_race, Difficulty.VeryHard, ai_build=AIBuild.Macro),
             ],
             realtime=False,
         )
