@@ -162,7 +162,7 @@ class MineCombat(BaseCombat):
                         [
                             u
                             for u in only_enemy_units
-                            if cy_distance_to_squared(unit.position, u.position) < 25.56
+                            if cy_distance_to_squared(unit.position, u.position) < 49.5
                         ]
                     )
                     > 0
