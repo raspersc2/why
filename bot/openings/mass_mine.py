@@ -67,7 +67,7 @@ class MassMine(OpeningBase):
     @property
     def army_comp(self) -> dict:
         own_army_dict = self.ai.mediator.get_own_army_dict
-        if len(own_army_dict[UnitTypeId.MEDIVAC]) < 4:
+        if len(own_army_dict[UnitTypeId.MEDIVAC]) < 2:
             return {
                 UnitTypeId.WIDOWMINE: {"proportion": 0.8, "priority": 1},
                 UnitTypeId.MEDIVAC: {"proportion": 0.2, "priority": 0},
@@ -241,6 +241,10 @@ class MassMine(OpeningBase):
 
             # Assign each mine to defense
             for i, mine in enumerate(closest_mines):
+                if not self.ai.mediator.is_position_safe(
+                    grid=self.ai.mediator.get_air_grid, position=mine.position
+                ):
+                    continue
                 self.ai.mediator.assign_role(tag=mine.tag, role=UnitRole.BASE_DEFENDER)
                 self._base_defense_mines[th_tag].append(mine.tag)
                 if mine.is_burrowed:
@@ -447,23 +451,28 @@ class MassMine(OpeningBase):
         ]
 
         # Return if we already have enough mines
-        if len(self._main_ramp_mines) >= 2:
+        if len(self._main_ramp_mines) >= 1:
             # Handle existing ramp mines
             for mine_tag in self._main_ramp_mines:
                 mine = self.ai.unit_tag_dict.get(mine_tag)
                 if not mine:
                     continue
-                if cy_distance_to_squared(mine.position, self._main_ramp_pos) < 1.5:
+                if cy_distance_to_squared(
+                    mine.position, self._main_ramp_pos
+                ) < 1.5 or not self.ai.mediator.is_position_safe(
+                    grid=self.ai.mediator.get_ground_grid, position=mine.position
+                ):
                     mine(AbilityId.BURROWDOWN_WIDOWMINE)
                 else:
                     if mine.is_burrowed:
                         mine(AbilityId.BURROWUP_WIDOWMINE)
                     else:
                         mine.move(self._main_ramp_pos)
-            return
 
         # Need more mines
         needed = 2 - len(self._main_ramp_mines)
+        if needed <= 0:
+            return
         available_units = self.ai.mediator.get_units_from_roles(roles=STEAL_FROM_ROLES)
         available_mines = [u for u in available_units if u.type_id in MINE_TYPES]
 

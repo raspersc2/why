@@ -56,7 +56,7 @@ class MineCombat(BaseCombat):
         )
         near_enemy: dict[int, Units] = self.mediator.get_units_in_range(
             start_points=units,
-            distances=13,
+            distances=11,
             query_tree=UnitTreeQueryType.AllEnemy,
             return_as_dict=True,
         )
@@ -81,11 +81,20 @@ class MineCombat(BaseCombat):
             ]
 
             only_enemy_units: list[Unit] = [
-                u for u in close_enemy if u.type_id not in ALL_STRUCTURES
+                u
+                for u in close_enemy
+                if u.type_id not in ALL_STRUCTURES and not u.is_memory
             ]
 
             attacking_maneuver: CombatManeuver = CombatManeuver()
             if unit.is_burrowed:
+                if attack_available and ability not in unit.abilities:
+                    self.mediator.update_unit_to_ability_dict(
+                        ability=ability,
+                        unit_tag=unit.tag,
+                    )
+                    attack_available = False
+
                 attacking_maneuver.add(
                     self._burrowed_mine_behavior(
                         unit,
@@ -134,10 +143,10 @@ class MineCombat(BaseCombat):
                     UseAbility(AbilityId.BURROWUP_WIDOWMINE, unit)
                 )
         else:
-            if (
-                not stay_burrowed
-                and cy_distance_to_squared(unit.position, target) > 100.0
-            ):
+            dist_to_target: float = cy_distance_to_squared(unit.position, target)
+            if dist_to_target < 100.0 and stay_burrowed:
+                return burrowed_mine_maneuver
+            elif dist_to_target > 62.0:
                 burrowed_mine_maneuver.add(
                     UseAbility(AbilityId.BURROWUP_WIDOWMINE, unit)
                 )
@@ -179,18 +188,16 @@ class MineCombat(BaseCombat):
                         UseAbility(AbilityId.MOVE_MOVE, unit, enemy_target)
                     )
             else:
-                if attack_available or (
-                    drilling_claws_available
-                    and not self.ai.mediator.get_is_detected(unit=unit)
-                ):
+                if attack_available:
                     unburrowed_mine_maneuver.add(
                         UseAbility(AbilityId.BURROWDOWN_WIDOWMINE, unit)
                     )
                 else:
                     unburrowed_mine_maneuver.add(KeepUnitSafe(unit, grid=grid))
-                    unburrowed_mine_maneuver.add(
-                        UseAbility(AbilityId.BURROWDOWN_WIDOWMINE, unit)
-                    )
+                    if not self.mediator.get_is_detected(unit=unit):
+                        unburrowed_mine_maneuver.add(
+                            UseAbility(AbilityId.BURROWDOWN_WIDOWMINE, unit)
+                        )
 
         else:
             unburrowed_mine_maneuver.add(
