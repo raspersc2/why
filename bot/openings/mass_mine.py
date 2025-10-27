@@ -128,6 +128,11 @@ class MassMine(OpeningBase):
                 self.ai.time > 450.0
                 and self.ai.get_total_supply(self.ai.mediator.get_cached_enemy_army) < 8
             )
+            or (
+                len(self.ai.mediator.get_enemy_army_dict[UnitTypeId.SIEGETANK])
+                + len(self.ai.mediator.get_enemy_army_dict[UnitTypeId.SIEGETANKSIEGED])
+                >= 2
+            )
         ):
             self._switched_to_bcs = True
             await self.ai.chat_send(f"Tag: {self.ai.time_formatted}_switched_to_bcs")

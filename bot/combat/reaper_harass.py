@@ -11,6 +11,7 @@ from ares.behaviors.combat.individual import (
     ReaperGrenade,
     ShootTargetInRange,
     UseAbility,
+    AMove,
 )
 from ares.consts import (
     ALL_STRUCTURES,
@@ -113,12 +114,15 @@ class ReaperHarass(BaseCombat):
                 or (u.type_id in CREEP_TUMOR_TYPES and u.is_active)
             )
         ]
+        only_threats_without_memory: list[Unit] = [
+            u for u in only_threats if not u.is_memory
+        ]
         near_lings: list[Unit] = [
-            t for t in only_threats if t.type_id == UnitID.ZERGLING
+            t for t in only_threats_without_memory if t.type_id == UnitID.ZERGLING
         ]
         near_melee: list[Unit] = [
             u
-            for u in only_threats
+            for u in only_threats_without_memory
             if u.ground_range < 3.0
             and cy_distance_to_squared(u.position, squad_pos) < 16.0
         ]
@@ -131,12 +135,8 @@ class ReaperHarass(BaseCombat):
             u for u in only_threats if u.type_id not in WORKER_TYPES
         ]
 
-        only_queens: bool = all(
-            u.type_id == UnitID.QUEEN for u in only_unit_threats_not_workers
-        )
-        len_marines: int = len(
-            [u for u in only_unit_threats_not_workers if u.type_id == UnitID.MARINE]
-        )
+        only_queens: bool = all(u.type_id == UnitID.QUEEN for u in only_threats)
+        len_marines: int = len([u for u in only_threats if u.type_id == UnitID.MARINE])
         take_marine_fight: bool = 0 < len_marines <= len(units)
 
         heal_threshold: float = kwargs["heal_threshold"]
@@ -163,9 +163,8 @@ class ReaperHarass(BaseCombat):
             low_health: bool = unit.health_percentage <= heal_threshold
             grenade_targets: list[Unit] = [
                 u
-                for u in only_threats
-                if u.is_visible
-                and cy_distance_to(u.position, unit.position)
+                for u in only_unit_threats_not_workers
+                if cy_distance_to(u.position, unit.position)
                 < self.reaper_grenade_range + unit.radius
             ]
 
@@ -176,8 +175,7 @@ class ReaperHarass(BaseCombat):
             if not unit.is_attacking and [
                 u
                 for u in near_melee
-                if not u.is_memory
-                and cy_distance_to_squared(u.position, unit.position) < 6.5
+                if cy_distance_to_squared(u.position, unit.position) < 6.5
             ]:
                 harass_maneuver.add(KeepUnitSafe(unit=unit, grid=reaper_grid))
             # reaper grenade
@@ -218,7 +216,7 @@ class ReaperHarass(BaseCombat):
                 )
 
             # no enemies in sight, so let's sneak around
-            elif not only_threats:
+            elif not only_threats_without_memory:
                 harass_maneuver.add(
                     PathUnitToTarget(
                         unit=unit,
@@ -261,7 +259,7 @@ class ReaperHarass(BaseCombat):
                         )
                     else:
                         if not _can_engage:
-                            if only_threats:
+                            if only_threats_without_memory:
                                 harass_maneuver.add(
                                     KeepUnitSafe(unit=unit, grid=reaper_grid)
                                 )
@@ -274,13 +272,17 @@ class ReaperHarass(BaseCombat):
                                 )
                             )
 
-                        else:
+                        elif only_threats_without_memory:
                             harass_maneuver.add(
                                 AttackTarget(
                                     unit=unit,
-                                    target=cy_closest_to(unit.position, only_threats),
+                                    target=cy_closest_to(
+                                        unit.position, only_threats_without_memory
+                                    ),
                                 )
                             )
+                        else:
+                            harass_maneuver.add(AMove(unit=unit, target=target))
 
             harass_maneuver.add(KeepUnitSafe(unit=unit, grid=reaper_grid))
 
