@@ -80,6 +80,9 @@ class MineCombat(BaseCombat):
                 if u.type_id not in COMMON_UNIT_IGNORE_TYPES
             ]
 
+            only_enemy_units_inc_memory: list[Unit] = [
+                u for u in close_enemy if u.type_id not in ALL_STRUCTURES
+            ]
             only_enemy_units: list[Unit] = [
                 u
                 for u in close_enemy
@@ -105,6 +108,7 @@ class MineCombat(BaseCombat):
                         drilling_claws_available,
                         target,
                         stay_burrowed,
+                        only_enemy_units_inc_memory,
                     )
                 )
             else:
@@ -131,9 +135,10 @@ class MineCombat(BaseCombat):
         drilling_claws_available: bool,
         target: Point2,
         stay_burrowed: bool,
+        only_enemy_units_inc_memory: list[Unit],
     ) -> CombatManeuver:
         burrowed_mine_maneuver: CombatManeuver = CombatManeuver()
-        if only_enemy_units:
+        if only_enemy_units_inc_memory:
             if attack_available:
                 return burrowed_mine_maneuver
             elif drilling_claws_available and self.ai.mediator.get_is_detected(
