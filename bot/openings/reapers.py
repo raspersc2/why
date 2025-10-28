@@ -1,6 +1,8 @@
+from sc2.data import Race
+
 from ares import AresBot
 from ares.managers.squad_manager import UnitSquad
-from cython_extensions import cy_closest_to
+from cython_extensions import cy_closest_to, cy_center
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.ids.upgrade_id import UpgradeId
 from sc2.position import Point2
@@ -96,7 +98,22 @@ class Reapers(OpeningBase):
                     heal_threshold=self.reaper_retreat_threshold,
                 )
 
-    def _update_harass_target(self, reapers: Units):
+    def _update_harass_target(self, reapers: Units) -> None:
+        if main_threats := self.ai.mediator.get_main_ground_threats_near_townhall:
+            if self.ai.get_total_supply(main_threats) >= 2:
+                self.reaper_harass_target = Point2(cy_center(main_threats))
+                return
+
+        if self.ai.enemy_race == Race.Terran:
+            unfinished_bunkers = [
+                s
+                for s in self.ai.get_enemy_proxies(60.0, self.ai.start_location)
+                if s.type_id == UnitTypeId.BUNKER and s.is_ready
+            ]
+            if len(unfinished_bunkers) > 0:
+                self.reaper_harass_target = unfinished_bunkers[0].position
+                return
+
         if self.ai.time < 150.0:
             self.reaper_harass_target = self.ai.enemy_start_locations[0]
             return
