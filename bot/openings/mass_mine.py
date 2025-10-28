@@ -67,7 +67,7 @@ class MassMine(OpeningBase):
     @property
     def army_comp(self) -> dict:
         own_army_dict = self.ai.mediator.get_own_army_dict
-        if len(own_army_dict[UnitTypeId.MEDIVAC]) < 2:
+        if len(own_army_dict[UnitTypeId.MEDIVAC]) < 4:
             return {
                 UnitTypeId.WIDOWMINE: {"proportion": 0.8, "priority": 1},
                 UnitTypeId.MEDIVAC: {"proportion": 0.2, "priority": 0},
@@ -129,7 +129,8 @@ class MassMine(OpeningBase):
                 and self.ai.get_total_supply(self.ai.mediator.get_cached_enemy_army) < 8
             )
             or (
-                len(self.ai.mediator.get_enemy_army_dict[UnitTypeId.SIEGETANK])
+                self.ai.supply_army > 50
+                and len(self.ai.mediator.get_enemy_army_dict[UnitTypeId.SIEGETANK])
                 + len(self.ai.mediator.get_enemy_army_dict[UnitTypeId.SIEGETANKSIEGED])
                 >= 2
             )
@@ -190,10 +191,12 @@ class MassMine(OpeningBase):
                 if not mine or mine.is_burrowed:
                     continue
 
-                if cy_distance_to_squared(mine.position, position) < 3.0:
-                    mine(AbilityId.BURROWDOWN_WIDOWMINE)
-                else:
-                    mine.move(position)
+                self._mine_combat.execute(
+                    [mine],
+                    target=position,
+                    stay_burrowed=True,
+                    burrow_at_distance_sq=3.0,
+                )
 
     def _handle_drops(self) -> None:
         self._execute_drops()
@@ -303,11 +306,11 @@ class MassMine(OpeningBase):
         )
 
         # Build missile turrets at each base
-        for townhall in self.ai.townhalls:
-            if (
-                not self.ai.can_afford(UnitTypeId.MISSILETURRET)
-                or self.ai.structure_pending(UnitTypeId.MISSILETURRET)
-                or len(
+        if self.ai.minerals > 300.0 and not self.ai.structure_pending(
+            UnitTypeId.MISSILETURRET
+        ):
+            eng_bay_ready: bool = (
+                len(
                     [
                         s
                         for s in self.ai.mediator.get_own_structures_dict[
@@ -316,23 +319,41 @@ class MassMine(OpeningBase):
                         if s.is_ready
                     ]
                 )
-                == 0
-            ):
-                break
+                > 0
+            )
+            if not eng_bay_ready:
+                return
 
-            location: Point2 = townhall.position
-            existing_turrets: list[Unit] = [
-                s
-                for s in self.ai.structures
-                if s.type_id == UnitTypeId.MISSILETURRET
-                and cy_distance_to_squared(location, s.position) < 200.0
-            ]
-            if len(existing_turrets) < 2:
-                self.ai.register_behavior(
-                    BuildStructure(
-                        location, UnitTypeId.MISSILETURRET, closest_to=location
+            for townhall in self.ai.townhalls:
+                if (
+                    not self.ai.can_afford(UnitTypeId.MISSILETURRET)
+                    or self.ai.structure_pending(UnitTypeId.MISSILETURRET)
+                    or len(
+                        [
+                            s
+                            for s in self.ai.mediator.get_own_structures_dict[
+                                UnitTypeId.ENGINEERINGBAY
+                            ]
+                            if s.is_ready
+                        ]
                     )
-                )
+                    == 0
+                ):
+                    break
+
+                location: Point2 = townhall.position
+                existing_turrets: list[Unit] = [
+                    s
+                    for s in self.ai.structures
+                    if s.type_id == UnitTypeId.MISSILETURRET
+                    and cy_distance_to_squared(location, s.position) < 200.0
+                ]
+                if len(existing_turrets) < 2:
+                    self.ai.register_behavior(
+                        BuildStructure(
+                            location, UnitTypeId.MISSILETURRET, closest_to=location
+                        )
+                    )
 
     def _assign_mine_drops(self) -> None:
         """Assign available medivacs and mines to new drop operations."""
@@ -460,19 +481,12 @@ class MassMine(OpeningBase):
             # Handle existing ramp mines
             for mine_tag in self._main_ramp_mines:
                 mine = self.ai.unit_tag_dict.get(mine_tag)
-                if not mine:
-                    continue
-                if cy_distance_to_squared(
-                    mine.position, self._main_ramp_pos
-                ) < 1.5 or not self.ai.mediator.is_position_safe(
-                    grid=self.ai.mediator.get_ground_grid, position=mine.position
-                ):
-                    mine(AbilityId.BURROWDOWN_WIDOWMINE)
-                else:
-                    if mine.is_burrowed:
-                        mine(AbilityId.BURROWUP_WIDOWMINE)
-                    else:
-                        mine.move(self._main_ramp_pos)
+                self._mine_combat.execute(
+                    [mine],
+                    target=self._main_ramp_pos,
+                    burrow_at_distance_sq=1.5,
+                    stay_burrowed=True,
+                )
 
         # Need more mines
         needed = 2 - len(self._main_ramp_mines)

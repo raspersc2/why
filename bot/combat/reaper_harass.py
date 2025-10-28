@@ -163,7 +163,7 @@ class ReaperHarass(BaseCombat):
             low_health: bool = unit.health_percentage <= heal_threshold
             grenade_targets: list[Unit] = [
                 u
-                for u in only_unit_threats_not_workers
+                for u in only_threats_without_memory
                 if cy_distance_to(u.position, unit.position)
                 < self.reaper_grenade_range + unit.radius
             ]

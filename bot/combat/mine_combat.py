@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from math import sqrt
 from typing import TYPE_CHECKING, Union
 
 import numpy as np
@@ -53,6 +54,11 @@ class MineCombat(BaseCombat):
         )
         stay_burrowed: bool = (
             kwargs["stay_burrowed"] if "stay_burrowed" in kwargs else False
+        )
+        burrow_at_distance_sq: bool = (
+            kwargs["burrow_at_distance_sq"]
+            if "burrow_at_distance_sq" in kwargs
+            else 100.0
         )
         near_enemy: dict[int, Units] = self.mediator.get_units_in_range(
             start_points=units,
@@ -109,6 +115,7 @@ class MineCombat(BaseCombat):
                         target,
                         stay_burrowed,
                         only_enemy_units_inc_memory,
+                        burrow_at_distance_sq,
                     )
                 )
             else:
@@ -121,6 +128,7 @@ class MineCombat(BaseCombat):
                         attack_available,
                         drilling_claws_available,
                         target,
+                        burrow_at_distance_sq,
                     )
                 )
             self.ai.register_behavior(attacking_maneuver)
@@ -136,12 +144,13 @@ class MineCombat(BaseCombat):
         target: Point2,
         stay_burrowed: bool,
         only_enemy_units_inc_memory: list[Unit],
+        burrow_at_distance_sq: float,
     ) -> CombatManeuver:
         burrowed_mine_maneuver: CombatManeuver = CombatManeuver()
         if only_enemy_units_inc_memory:
             if attack_available:
                 return burrowed_mine_maneuver
-            elif drilling_claws_available and self.ai.mediator.get_is_detected(
+            elif not drilling_claws_available or self.ai.mediator.get_is_detected(
                 unit=unit
             ):
                 burrowed_mine_maneuver.add(
@@ -149,9 +158,11 @@ class MineCombat(BaseCombat):
                 )
         else:
             dist_to_target: float = cy_distance_to_squared(unit.position, target)
-            if dist_to_target < 100.0 and stay_burrowed:
+            if dist_to_target < burrow_at_distance_sq and stay_burrowed:
                 return burrowed_mine_maneuver
-            elif dist_to_target > 62.0:
+            elif dist_to_target > 62.0 or (
+                dist_to_target > burrow_at_distance_sq + 5.0 and stay_burrowed
+            ):
                 burrowed_mine_maneuver.add(
                     UseAbility(AbilityId.BURROWUP_WIDOWMINE, unit)
                 )
@@ -166,6 +177,7 @@ class MineCombat(BaseCombat):
         attack_available: bool,
         drilling_claws_available: bool,
         target: Point2,
+        burrow_at_distance_sq: float,
     ) -> CombatManeuver:
         aggressive: bool = drilling_claws_available
         unburrowed_mine_maneuver: CombatManeuver = CombatManeuver()
@@ -205,8 +217,11 @@ class MineCombat(BaseCombat):
                         )
 
         else:
+            success_at_distance = sqrt(burrow_at_distance_sq)
             unburrowed_mine_maneuver.add(
-                PathUnitToTarget(unit, grid, target, success_at_distance=5.0)
+                PathUnitToTarget(
+                    unit, grid, target, success_at_distance=success_at_distance
+                )
             )
             unburrowed_mine_maneuver.add(
                 UseAbility(AbilityId.BURROWDOWN_WIDOWMINE, unit)

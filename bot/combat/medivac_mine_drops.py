@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
+from sc2.ids.unit_typeid import UnitTypeId
+
 from ares import ALL_STRUCTURES, ManagerMediator
 from ares.behaviors.combat import CombatManeuver
 from ares.behaviors.combat.individual import (
@@ -385,7 +387,13 @@ class MedivacMineDrops(BaseCombat):
                 distances=[9.0],
                 query_tree=UnitTreeQueryType.AllEnemy,
             )[0].filter(lambda u: u.type_id not in ALL_STRUCTURES)
-            if self.ai.get_total_supply(close_enemy) >= 3:
+            if (
+                self.ai.get_total_supply(close_enemy) >= 3
+                and len(
+                    [u for u in close_enemy if u.type_id == UnitTypeId.SIEGETANKSIEGED]
+                )
+                == 0
+            ):
                 return med_pos
 
         # look for a cluster of enemy workers nearby

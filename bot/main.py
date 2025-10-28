@@ -1,12 +1,16 @@
 import importlib
+import math
 from typing import Any, Optional
 
 import numpy as np
+from loguru import logger
+from sc2.position import Point2
+
 from ares import AresBot
 from ares.behaviors.combat.individual import KeepUnitSafe
 from ares.behaviors.macro.mining import Mining
 from ares.consts import ALL_STRUCTURES, UnitRole
-from cython_extensions import cy_distance_to_squared
+from cython_extensions import cy_distance_to_squared, cy_closest_to, cy_towards
 from sc2.data import Race
 from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId
@@ -46,6 +50,7 @@ class MyBot(AresBot):
         self.opening_chat_tag: bool = False
         self._switched_to_prevent_tie: bool = False
         self.injured_general_unit_to_repairing_scvs: dict[int, set[int]] = dict()
+        self._terran_bunker_finder_activated: bool = False
 
     def load_opening(self, opening_name: str) -> None:
         """Load opening from bot.openings.<snake_case> with class <PascalCase>"""
@@ -76,6 +81,7 @@ class MyBot(AresBot):
 
         self._mules()
         self._general_repair()
+        self._look_for_terran_bunker()
 
         if self.opening_handler and hasattr(self.opening_handler, "on_step"):
             await self.opening_handler.on_step()
@@ -223,6 +229,74 @@ class MyBot(AresBot):
             if mfs:
                 mf: Unit = max(mfs, key=lambda x: x.mineral_contents)
                 oc(AbilityId.CALLDOWNMULE_CALLDOWNMULE, mf)
+
+    def _look_for_terran_bunker(self):
+        # when core is ready have a look around for proxies
+        if (
+            self.enemy_race == Race.Terran
+            and not self._terran_bunker_finder_activated
+            and self.time > 77.0
+        ):
+            natural_location: Point2 = self.mediator.get_own_nat
+            if worker := self.mediator.select_worker(target_position=natural_location):
+                self.mediator.assign_role(tag=worker.tag, role=UnitRole.MAP_CONTROL)
+
+                radius = 9
+                num_points = 10
+
+                # Generate the scouting positions in a circular pattern
+                scouting_positions = [
+                    Point2(
+                        (
+                            natural_location.x
+                            + radius * math.cos(2 * math.pi * i / num_points),
+                            natural_location.y
+                            + radius * math.sin(2 * math.pi * i / num_points),
+                        )
+                    )
+                    for i in range(num_points)
+                ]
+                scouting_positions = [
+                    s for s in scouting_positions if self.in_pathing_grid(s)
+                ]
+
+                for i, position in enumerate(scouting_positions):
+                    worker.move(position, queue=i != 0)
+
+                logger.info(
+                    f"{self.time_formatted} - Sent scout to circle around natural"
+                )
+
+                self._terran_bunker_finder_activated = True
+                return
+
+        if self._terran_bunker_finder_activated and (
+            scouts := self.mediator.get_units_from_role(
+                role=UnitRole.MAP_CONTROL, unit_type=UnitTypeId.SCV
+            )
+        ):
+            for scout in scouts:
+                if proxies := self.get_enemy_proxies(30.0, scout.position):
+                    scout.attack(cy_closest_to(scout.position, proxies).position)
+
+                elif self.mediator.get_enemy_expanded:
+                    self.mediator.assign_role(tag=scout.tag, role=UnitRole.GATHERING)
+
+                elif scout.is_idle:
+                    if self.time < 125.0:
+                        scout.move(
+                            Point2(
+                                cy_towards(
+                                    self.mediator.get_own_nat,
+                                    self.game_info.map_center,
+                                    10.0,
+                                )
+                            )
+                        )
+                    else:
+                        self.mediator.assign_role(
+                            tag=scout.tag, role=UnitRole.GATHERING
+                        )
 
     """
     Can use `python-sc2` hooks as usual, but make a call the inherited method in the superclass
