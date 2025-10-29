@@ -386,7 +386,10 @@ class MedivacMineDrops(BaseCombat):
                 start_points=[med_pos],
                 distances=[9.0],
                 query_tree=UnitTreeQueryType.AllEnemy,
-            )[0].filter(lambda u: u.type_id not in ALL_STRUCTURES)
+            )[0].filter(
+                lambda u: u.type_id not in ALL_STRUCTURES
+                and u.type_id not in WORKER_TYPES
+            )
             if (
                 self.ai.get_total_supply(close_enemy) >= 3
                 and len(

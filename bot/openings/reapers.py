@@ -99,7 +99,9 @@ class Reapers(OpeningBase):
                 )
 
     def _update_harass_target(self, reapers: Units) -> None:
-        if main_threats := self.ai.mediator.get_main_ground_threats_near_townhall:
+        if not self.ai.mediator.get_enemy_roach_rushed and (
+            main_threats := self.ai.mediator.get_main_ground_threats_near_townhall
+        ):
             if self.ai.get_total_supply(main_threats) >= 2:
                 self.reaper_harass_target = Point2(cy_center(main_threats))
                 return

@@ -121,9 +121,9 @@ class MassMine(OpeningBase):
             await self._battle_cruisers.on_step()
         elif self.ai.build_order_runner.build_completed:
             self._macro()
-
+        supply_count: int = 167 if len(self.ai.townhalls) > 1 else 124
         if not self._switched_to_bcs and (
-            self.ai.supply_used >= 167
+            self.ai.supply_used >= supply_count
             or (
                 self.ai.time > 450.0
                 and self.ai.get_total_supply(self.ai.mediator.get_cached_enemy_army) < 8
