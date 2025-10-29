@@ -217,14 +217,20 @@ class ReaperHarass(BaseCombat):
 
             # no enemies in sight, so let's sneak around
             elif not only_threats_without_memory:
-                harass_maneuver.add(
-                    PathUnitToTarget(
-                        unit=unit,
-                        grid=reaper_grid,
-                        target=target,
-                        success_at_distance=3.0,
+                if (
+                    not only_threats
+                    and cy_distance_to_squared(unit.position, harass_target) < 150.0
+                ):
+                    harass_maneuver.add(AMove(unit=unit, target=target))
+                else:
+                    harass_maneuver.add(
+                        PathUnitToTarget(
+                            unit=unit,
+                            grid=reaper_grid,
+                            target=target,
+                            success_at_distance=3.0,
+                        )
                     )
-                )
 
             else:
                 # nearby tanks, try to get on top of them
