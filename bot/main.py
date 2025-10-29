@@ -92,6 +92,16 @@ class MyBot(AresBot):
             )
             self.opening_chat_tag = True
 
+        if not self._switched_to_prevent_tie and self.floating_enemy:
+            self._switched_to_prevent_tie = True
+            self.load_opening("BattleCruiserRush")
+            if hasattr(self.opening_handler, "on_start"):
+                await self.opening_handler.on_start(self)
+            for worker in self.workers:
+                self.mediator.assign_role(tag=worker.tag, role=UnitRole.GATHERING)
+
+            await self.chat_send(f"Tag: {self.time_formatted}_switched_to_prevent_tie")
+
         if iteration % 16 == 0:
             own_structures_dict = self.mediator.get_own_structures_dict
             depots: list[Unit] = own_structures_dict[UnitTypeId.SUPPLYDEPOT]
@@ -297,6 +307,20 @@ class MyBot(AresBot):
                         self.mediator.assign_role(
                             tag=scout.tag, role=UnitRole.GATHERING
                         )
+
+    @property
+    def floating_enemy(self) -> bool:
+        if self.enemy_race != Race.Terran or self.time < 270.0:
+            return False
+
+        if (
+            len([s for s in self.enemy_structures if s.is_flying]) > 0
+            and self.state.visibility[self.enemy_start_locations[0].rounded] != 0
+            and len(self.enemy_units) < 4
+        ):
+            return True
+
+        return False
 
     """
     Can use `python-sc2` hooks as usual, but make a call the inherited method in the superclass
