@@ -134,6 +134,8 @@ class MassMine(OpeningBase):
                 + len(self.ai.mediator.get_enemy_army_dict[UnitTypeId.SIEGETANKSIEGED])
                 >= 2
             )
+            # a general escape clause if the game has gone on for too long
+            or self.ai.time > 750.0
         ):
             self._switched_to_bcs = True
             await self.ai.chat_send(f"Tag: {self.ai.time_formatted}_switched_to_bcs")
