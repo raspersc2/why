@@ -1,3 +1,6 @@
+from sc2.unit import Unit
+from src.ares.consts import UnitRole
+
 from ares import AresBot
 from cython_extensions import cy_unit_pending
 from sc2.ids.unit_typeid import UnitTypeId
@@ -8,11 +11,12 @@ from sc2.units import Units
 from bot.combat.base_combat import BaseCombat
 from bot.combat.battle_cruiser_combat import BattleCruiserCombat
 from bot.combat.ground_range_combat import GroundRangeCombat
+from bot.openings.bio import Bio
 from bot.openings.opening_base import OpeningBase
 
 
 class BattleCruiserRush(OpeningBase):
-    _battle_cruiser_combat: BaseCombat
+    _bio: OpeningBase
     _ground_range_combat: BaseCombat
 
     def __init__(self):
@@ -35,7 +39,8 @@ class BattleCruiserRush(OpeningBase):
     async def on_start(self, ai: AresBot) -> None:
         await super().on_start(ai)
         self._battle_cruiser_combat = BattleCruiserCombat(ai, ai.config, ai.mediator)
-        self._ground_range_combat = GroundRangeCombat(ai, ai.config, ai.mediator)
+        self._bio = Bio()
+        await self._bio.on_start(ai)
 
     async def on_step(self) -> None:
         if self.ai.build_order_runner.build_completed:
@@ -43,7 +48,6 @@ class BattleCruiserRush(OpeningBase):
 
         attack_target: Point2 = self.attack_target
         bcs: Units = self.ai.mediator.get_own_army_dict[UnitTypeId.BATTLECRUISER]
-        marines: Units = self.ai.mediator.get_own_army_dict[UnitTypeId.MARINE]
         if not self._attack_started and bcs:
             self._attack_started = True
 
@@ -54,7 +58,7 @@ class BattleCruiserRush(OpeningBase):
             if not self._attack_started
             else attack_target
         )
-        self._ground_range_combat.execute(marines, target=marine_target)
+        await self._bio.on_step(target=marine_target)
 
     def _macro(self):
         pending_bcs: bool = cy_unit_pending(self.ai, UnitTypeId.BATTLECRUISER)
@@ -68,3 +72,7 @@ class BattleCruiserRush(OpeningBase):
             freeflow_mode=True,
             upgrade_to_pfs=False,
         )
+
+    def on_unit_created(self, unit: Unit) -> None:
+        if unit.type_id == UnitTypeId.MARINE:
+            self.ai.mediator.assign_role(tag=unit.tag, role=UnitRole.ATTACKING)

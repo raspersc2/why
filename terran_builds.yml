@@ -11,7 +11,8 @@ BuildChoices:
     test_123:
         BotName: Test
         Cycle:
-            - MassMine
+            - ProxyMarauder
+#            - MassMine
 #            - Reapers
 #            - BattleCruiserRush
 #            - ThorDrop
@@ -20,6 +21,7 @@ BuildChoices:
         BotName: ProtossRace
         Cycle:
             - MassMine
+            - ProxyMarauder
             - Reapers
             - BattleCruiserRush
             - ThorDrop
@@ -28,6 +30,7 @@ BuildChoices:
         BotName: RandomRace
         Cycle:
             - MassMine
+            - ProxyMarauder
             - Reapers
             - BattleCruiserRush
             - ThorDrop
@@ -36,6 +39,7 @@ BuildChoices:
         BotName: TerranRace
         Cycle:
             - MassMine
+            - ProxyMarauder
             - Reapers
             - BattleCruiserRush
             - ThorDrop
@@ -44,6 +48,7 @@ BuildChoices:
         BotName: ZergRace
         Cycle:
             - MassMine
+            - ProxyMarauder
             - Reapers
             - BattleCruiserRush
             - ThorDrop
@@ -71,9 +76,6 @@ Builds:
         - 19 fusioncore
         - 19 starporttechlab
 
-    # banshee follow up into scv allin
-    HellionDrop:
-      - 14 supplydepot
     MassMine:
       ConstantWorkerProductionTill: 0
       PersistentWorker: False
@@ -97,16 +99,23 @@ Builds:
         - 0 factory
         - 0 addonswap factory barracksreactor
         - 0 scv
+        - 0 widowmine *2
+        - 0 starport
 
     # proxy rax with marine, once orbital is done pull scvs
-    MightBeAWorkerRush:
+    WorkerRush:
       - 14 supplydepot
     # marine/tanks/static defence -> do nothing till mined out, then attack with everything!
     TwoBaseTurtle:
       - 14 supplydepot
     # pull scvs
     ProxyMarauder:
-      - 14 supplydepot
+      ConstantWorkerProductionTill: 0
+      PersistentWorker: False
+      OpeningBuildOrder:
+        - 12 scv
+        - 13 supplydepot
+        - 13 scv
     ProxyRaxInMain:
       - 14 supplydepot
     # add hellions when possible

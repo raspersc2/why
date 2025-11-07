@@ -1,6 +1,8 @@
 from abc import ABCMeta, abstractmethod
 from itertools import cycle
 
+import numpy as np
+
 from ares import AresBot
 from ares.behaviors.macro import (
     AutoSupply,
@@ -16,8 +18,7 @@ from ares.behaviors.macro import (
 )
 from ares.cache import property_cache_once_per_frame
 from ares.consts import UnitRole
-from cython_extensions import cy_closest_to, cy_find_units_center_mass
-from cython_extensions.geometry import cy_distance_to
+from cython_extensions import cy_find_units_center_mass
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.ids.upgrade_id import UpgradeId
 from sc2.position import Point2
@@ -40,8 +41,29 @@ class OpeningBase(metaclass=ABCMeta):
         self.current_base_target = ai.enemy_start_locations[0]
 
     @abstractmethod
-    async def on_step(self) -> None:
+    async def on_step(self, target: Point2 | None = None) -> None:
         pass
+
+    def _calculate_proxy_location(self) -> Point2:
+        potential_locations: list[
+            tuple[Point2, float]
+        ] = self.ai.mediator.get_enemy_expansions[2:6]
+
+        closest = potential_locations[0]
+        closest_dist: float = 998000.0
+        grid: np.ndarray = self.ai.mediator.get_ground_grid
+        target: Point2 = self.ai.enemy_start_locations[0]
+
+        for loc in potential_locations:
+            if path := self.ai.mediator.find_raw_path(
+                start=target, target=loc[0], grid=grid, sensitivity=2
+            ):
+                dist: int = len(path)
+                if dist < closest_dist:
+                    closest_dist = dist
+                    closest = loc[0]
+
+        return closest
 
     def _generic_macro_plan(
         self,
@@ -55,6 +77,7 @@ class OpeningBase(metaclass=ABCMeta):
         upgrade_to_pfs: bool = True,
         production_controller_enabled: bool = True,
         num_one_base_workers: int = 20,
+        num_gas_buildings: int = 100,
     ) -> None:
         if (
             upgrade_to_pfs
@@ -71,7 +94,7 @@ class OpeningBase(metaclass=ABCMeta):
             macro_plan.add(ProductionController(army_comp, build_location))
 
         macro_plan.add(AutoSupply(self.ai.start_location))
-        macro_plan.add(GasBuildingController(100))
+        macro_plan.add(GasBuildingController(num_gas_buildings))
         if (
             upgrade_to_pfs
             and self.ai.mediator.get_own_structures_dict[UnitTypeId.ENGINEERINGBAY]
@@ -111,7 +134,7 @@ class OpeningBase(metaclass=ABCMeta):
             macro_plan.add(ExpansionController(100))
         self.ai.register_behavior(macro_plan)
 
-    def _handle_proxy_probe_assignment(
+    def _handle_proxy_scv_assignment(
         self, max_proxy_workers: int, proxy_location: Point2
     ) -> Units:
         proxy_workers: Units = self.ai.mediator.get_units_from_role(
@@ -161,33 +184,3 @@ class OpeningBase(metaclass=ABCMeta):
                 self.current_base_target = next(self.expansions_generator)
 
             return self.current_base_target
-
-    def _count_started_at_proxy(
-        self, unit_id: UnitTypeId, target: Point2, radius: float = 18.0
-    ) -> int:
-        """Counts structures of type unit_id that are started (under construction or ready) near target."""
-        structures = self.ai.mediator.get_own_structures_dict[unit_id]
-        if len(structures) == 0:
-            return 0
-        return len(
-            [s for s in structures if cy_distance_to(target, s.position) < radius]
-        )
-
-    def _next_build_target(
-        self, plan: list[tuple[UnitTypeId, int]], target: Point2
-    ) -> UnitTypeId | None:
-        """Given a normalized plan, returns the next (unit_id, remaining_for_this_step).
-        Ensures all previous steps are satisfied before moving on.
-        """
-        # cumulative approach: for each step, ensure that total built of that type at proxy
-        # meets the sum of counts up to that step for that same type
-        progress_per_type: dict[UnitTypeId, int] = {}
-        for unit_id, count in plan:
-            current_built = self._count_started_at_proxy(unit_id, target)
-            already_required = progress_per_type.get(unit_id, 0)
-            step_goal_total = already_required + count
-            if current_built < step_goal_total:
-                # still need to build for this step
-                return unit_id
-            progress_per_type[unit_id] = step_goal_total
-        return None

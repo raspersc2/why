@@ -93,7 +93,10 @@ class BattleCruiserCombat(BaseCombat):
                 )
             else:
                 if close_enemy:
-                    attacking_maneuver.add(KeepUnitSafe(unit=unit, grid=grid))
+                    if not self.mediator.is_position_safe(
+                        grid=grid, position=unit.position, weight_safety_limit=18.0
+                    ):
+                        attacking_maneuver.add(KeepUnitSafe(unit=unit, grid=grid))
 
                 attacking_maneuver.add(
                     PathUnitToTarget(unit=unit, target=target, grid=grid)

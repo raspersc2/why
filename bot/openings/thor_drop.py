@@ -19,6 +19,7 @@ from sc2.unit import Unit
 from sc2.units import Units
 
 from bot.combat.base_combat import BaseCombat
+from bot.openings.bio import Bio
 from bot.combat.battle_cruiser_combat import BattleCruiserCombat
 from bot.combat.generic_drops import GenericDrops
 from bot.combat.ground_range_combat import GroundRangeCombat
@@ -40,7 +41,7 @@ class ThorDrop(OpeningBase):
     _ground_range_combat: BaseCombat
     _thor_drops: BaseCombat
     target_healing_pos: Point2
-
+    _bio: OpeningBase
     _reapers: OpeningBase
 
     def __init__(self):
@@ -78,6 +79,8 @@ class ThorDrop(OpeningBase):
         await super().on_start(ai)
         self._reapers = Reapers()
         await self._reapers.on_start(ai)
+        self._bio = Bio()
+        await self._bio.on_start(ai)
         self._battle_cruiser_combat = BattleCruiserCombat(ai, ai.config, ai.mediator)
         self._ground_range_combat = GroundRangeCombat(ai, ai.config, ai.mediator)
         self._thor_drops: BaseCombat = GenericDrops(ai, ai.config, ai.mediator)
@@ -97,14 +100,14 @@ class ThorDrop(OpeningBase):
 
     async def on_step(self) -> None:
         await self._reapers.on_step()
-
+        await self._micro()
         if not self.ai.build_order_runner.build_completed:
             return
         self._assign_drops()
         # update targets, check if need healing etc
         self._update_drop_info()
         self._macro()
-        self._micro()
+        await self._micro()
         await self._handle_repair_crew()
 
     def _assign_drops(self) -> None:
@@ -149,18 +152,16 @@ class ThorDrop(OpeningBase):
             upgrade_to_pfs=False,
         )
 
-    def _micro(self) -> None:
+    async def _micro(self) -> None:
         self._thor_drops.execute(
             self.ai.mediator.get_units_from_roles(roles=DROP_ROLES),
             medivac_tag_to_units_tracker=self._medivac_to_thor,
         )
 
         # handle left over units
-        attackers: Units = self.ai.mediator.get_units_from_role(role=UnitRole.ATTACKING)
         attack_target: Point2 = self.attack_target
         thors: Units = self.ai.mediator.get_own_army_dict[UnitTypeId.THOR]
-        marines: Units = attackers(UnitTypeId.MARINE)
-        medivacs: Units = attackers(UnitTypeId.MEDIVAC)
+
         if not self._attack_started and thors:
             self._attack_started = True
         marine_target = (
@@ -168,21 +169,7 @@ class ThorDrop(OpeningBase):
             if not self._attack_started
             else attack_target
         )
-        self._ground_range_combat.execute(marines, target=marine_target)
-        grid: np.ndarray = self.ai.mediator.get_air_grid
-        for medivac in medivacs:
-            maneuver: CombatManeuver = CombatManeuver()
-            if marines:
-                maneuver.add(
-                    AMove(
-                        unit=medivac,
-                        target=Point2(
-                            cy_closest_to(medivac.position, marines).position
-                        ),
-                    )
-                )
-            maneuver.add(KeepUnitSafe(unit=medivac, grid=grid))
-            self.ai.register_behavior(maneuver)
+        await self._bio.on_step(target=marine_target)
 
     def _update_drop_info(self):
         keys_to_remove: list[int] = []

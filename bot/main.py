@@ -9,7 +9,7 @@ from sc2.position import Point2
 from ares import AresBot
 from ares.behaviors.combat.individual import KeepUnitSafe
 from ares.behaviors.macro.mining import Mining
-from ares.consts import ALL_STRUCTURES, UnitRole
+from ares.consts import ALL_STRUCTURES, UnitRole, TOWNHALL_TYPES
 from cython_extensions import cy_distance_to_squared, cy_closest_to, cy_towards
 from sc2.data import Race
 from sc2.ids.ability_id import AbilityId
@@ -146,6 +146,13 @@ class MyBot(AresBot):
                 continue
 
             if type_id in UNIT_TYPE_TO_NUM_REPAIRERS:
+                if (
+                    unit.is_structure
+                    and type_id not in TOWNHALL_TYPES
+                    and cy_distance_to_squared(unit.position, self.start_location)
+                    > 6500
+                ):
+                    continue
                 if type_id == UnitTypeId.HELLION and self.enemy_race == Race.Terran:
                     continue
                 num_scvs_required: int = UNIT_TYPE_TO_NUM_REPAIRERS[unit.type_id]

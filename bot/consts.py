@@ -1,4 +1,15 @@
+from enum import Enum
+
 from sc2.ids.unit_typeid import UnitTypeId as UnitID
+
+
+class ProxySCVStatus(str, Enum):
+    Idle = "idle"
+    Building = "building"
+    Defending = "defending"
+    Moving = "moving"
+    Repairing = "repairing"
+
 
 ATTACK_TARGET_IGNORE: set[UnitID] = {
     UnitID.SCV,
@@ -16,6 +27,12 @@ ATTACK_TARGET_IGNORE: set[UnitID] = {
     UnitID.REAPER,
 }
 
+BIO_FORCES: set[UnitID] = {
+    UnitID.MARINE,
+    UnitID.MARAUDER,
+    UnitID.MEDIVAC,
+}
+
 COMMON_UNIT_IGNORE_TYPES: set[UnitID] = {
     UnitID.EGG,
     UnitID.LARVA,
@@ -24,6 +41,7 @@ COMMON_UNIT_IGNORE_TYPES: set[UnitID] = {
     UnitID.CREEPTUMOR,
     UnitID.MULE,
 }
+
 
 UNIT_TYPE_TO_NUM_REPAIRERS: dict[UnitID, int] = {
     UnitID.BUNKER: 4,

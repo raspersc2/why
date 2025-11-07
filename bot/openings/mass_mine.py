@@ -25,14 +25,16 @@ from src.ares.consts import UnitRole
 from bot.combat.base_combat import BaseCombat
 from bot.combat.medivac_mine_drops import MedivacMineDrops
 from bot.combat.mine_combat import MineCombat
-from bot.openings.battle_cruiser_rush import BattleCruiserRush
 from bot.openings.opening_base import OpeningBase
+from bot.openings.bio import Bio
 from bot.openings.reapers import Reapers
 
 ARMY_TYPES: set[UnitTypeId] = {
     UnitTypeId.BATTLECRUISER,
     UnitTypeId.MEDIVAC,
     UnitTypeId.WIDOWMINE,
+    UnitTypeId.MARINE,
+    UnitTypeId.MARAUDER,
 }
 DROP_ROLES: set[UnitRole] = {
     UnitRole.DROP_SHIP,
@@ -40,11 +42,11 @@ DROP_ROLES: set[UnitRole] = {
     UnitRole.DROP_UNITS_ATTACKING,
 }
 MINE_TYPES: set[UnitTypeId] = {UnitTypeId.WIDOWMINE, UnitTypeId.WIDOWMINEBURROWED}
-STEAL_FROM_ROLES: set[UnitRole] = {UnitRole.ATTACKING, UnitRole.DEFENDING}
+STEAL_FROM_ROLES: set[UnitRole] = {UnitRole.ATTACKING, UnitRole.CONTROL_GROUP_FIVE}
 
 
 class MassMine(OpeningBase):
-    _battle_cruisers: OpeningBase
+    _bio: OpeningBase
     _reapers: OpeningBase
     _mine_combat: BaseCombat
     _mine_drops: BaseCombat
@@ -61,34 +63,50 @@ class MassMine(OpeningBase):
 
         self._defensive_mine_positions: dict[Point2, Point2] = dict()
         self._main_ramp_mines: list[int] = []
-        self._switched_to_bcs: bool = False
         self.defensive: bool = True
 
     @property
     def army_comp(self) -> dict:
-        own_army_dict = self.ai.mediator.get_own_army_dict
-        if len(own_army_dict[UnitTypeId.MEDIVAC]) < 4:
+        if (
+            self.ai.supply_army < 46
+            and len(self.ai.townhalls) <= 1
+            and self.ai.time < 420.0
+            and self.ai.supply_workers < 27
+        ):
             return {
                 UnitTypeId.WIDOWMINE: {"proportion": 0.8, "priority": 1},
                 UnitTypeId.MEDIVAC: {"proportion": 0.2, "priority": 0},
             }
         else:
             return {
-                UnitTypeId.WIDOWMINE: {"proportion": 1.0, "priority": 0},
+                UnitTypeId.WIDOWMINE: {"proportion": 0.3, "priority": 1},
+                UnitTypeId.MEDIVAC: {"proportion": 0.2, "priority": 0},
+                UnitTypeId.MARINE: {"proportion": 0.35, "priority": 0},
+                UnitTypeId.MARAUDER: {"proportion": 0.15, "priority": 0},
             }
 
     @property
     def upgrade_list(self) -> list[UpgradeId]:
         if len(self.ai.townhalls) < 2:
             return [UpgradeId.DRILLCLAWS]
-        return [UpgradeId.DRILLCLAWS, UpgradeId.HISECAUTOTRACKING]
+        return [
+            UpgradeId.DRILLCLAWS,
+            UpgradeId.HISECAUTOTRACKING,
+            UpgradeId.SHIELDWALL,
+            UpgradeId.TERRANINFANTRYWEAPONSLEVEL1,
+            UpgradeId.TERRANINFANTRYARMORSLEVEL1,
+            UpgradeId.TERRANINFANTRYWEAPONSLEVEL2,
+            UpgradeId.TERRANINFANTRYARMORSLEVEL2,
+            UpgradeId.TERRANINFANTRYWEAPONSLEVEL3,
+            UpgradeId.TERRANINFANTRYARMORSLEVEL3,
+        ]
 
     async def on_start(self, ai: AresBot) -> None:
         await super().on_start(ai)
-        self._battle_cruisers = BattleCruiserRush()
-        await self._battle_cruisers.on_start(ai)
         self._reapers = Reapers()
         await self._reapers.on_start(ai)
+        self._bio = Bio()
+        await self._bio.on_start(ai)
 
         self._mine_combat = MineCombat(ai, ai.config, ai.mediator)
         self._mine_drops = MedivacMineDrops(ai, ai.config, ai.mediator)
@@ -117,29 +135,10 @@ class MassMine(OpeningBase):
             self._defensive_mine_positions[el] = position
 
     async def on_step(self) -> None:
-        if self._switched_to_bcs:
-            await self._battle_cruisers.on_step()
-        elif self.ai.build_order_runner.build_completed:
+        if self.ai.build_order_runner.build_completed:
             self._macro()
-        supply_count: int = 167 if len(self.ai.townhalls) > 1 else 124
-        if not self._switched_to_bcs and (
-            self.ai.supply_used >= supply_count
-            or (
-                self.ai.time > 450.0
-                and self.ai.get_total_supply(self.ai.mediator.get_cached_enemy_army) < 8
-            )
-            or (
-                self.ai.supply_army > 50
-                and len(self.ai.mediator.get_enemy_army_dict[UnitTypeId.SIEGETANK])
-                + len(self.ai.mediator.get_enemy_army_dict[UnitTypeId.SIEGETANKSIEGED])
-                >= 2
-            )
-            # a general escape clause if the game has gone on for too long
-            or self.ai.time > 750.0
-        ):
-            self._switched_to_bcs = True
-            await self.ai.chat_send(f"Tag: {self.ai.time_formatted}_switched_to_bcs")
 
+        await self._bio.on_step()
         await self._reapers.on_step()
 
         if (
@@ -168,10 +167,13 @@ class MassMine(OpeningBase):
         self._mine_combat.execute(
             main_force(MINE_TYPES), target=_target, stay_burrowed=self.defensive
         )
+        medivacs: Units = self.ai.mediator.get_units_from_role(
+            role=UnitRole.CONTROL_GROUP_FIVE
+        )
 
         # handle medivacs not currently dropping
         air_grid = self.ai.mediator.get_air_grid
-        for medivac in main_force(UnitTypeId.MEDIVAC):
+        for medivac in medivacs:
             medivac_maneuver: CombatManeuver = CombatManeuver()
             medivac_maneuver.add(KeepUnitSafe(medivac, grid=air_grid))
             if medivac.has_cargo and cy_in_pathing_grid_ma(air_grid, medivac.position):
@@ -278,7 +280,12 @@ class MassMine(OpeningBase):
                 self.ai.mediator.assign_role(tag=unit.tag, role=UnitRole.ATTACKING)
 
     def on_unit_created(self, unit: Unit) -> None:
-        if unit.type_id in ARMY_TYPES:
+        if (
+            unit.type_id == UnitTypeId.MEDIVAC
+            and len(self._medivac_tag_to_mine_tracker) < 4
+        ):
+            self.ai.mediator.assign_role(tag=unit.tag, role=UnitRole.CONTROL_GROUP_FIVE)
+        elif unit.type_id in ARMY_TYPES:
             self.ai.mediator.assign_role(tag=unit.tag, role=UnitRole.ATTACKING)
 
     def _execute_drops(self) -> None:
@@ -302,7 +309,7 @@ class MassMine(OpeningBase):
             add_upgrades=True,
             can_expand=True,
             freeflow_mode=freeflow_mode,
-            upgrade_to_pfs=True,
+            upgrade_to_pfs=False,
             production_controller_enabled=production_controller_enabled,
             num_one_base_workers=24,
         )

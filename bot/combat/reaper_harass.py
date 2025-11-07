@@ -141,7 +141,10 @@ class ReaperHarass(BaseCombat):
 
         heal_threshold: float = kwargs["heal_threshold"]
         if take_marine_fight:
-            heal_threshold = 0.11
+            if len_marines <= 2:
+                heal_threshold = 0.0
+            else:
+                heal_threshold = 0.12
 
         if only_queens or take_marine_fight:
             fight_result: EngagementResult = EngagementResult.VICTORY_CLOSE
@@ -165,7 +168,7 @@ class ReaperHarass(BaseCombat):
                 u
                 for u in only_threats_without_memory
                 if cy_distance_to(u.position, unit.position)
-                < self.reaper_grenade_range + unit.radius
+                < self.reaper_grenade_range + unit.radius + u.radius
             ]
 
             harass_maneuver: CombatManeuver = CombatManeuver()
@@ -200,13 +203,11 @@ class ReaperHarass(BaseCombat):
                     harass_maneuver.add(
                         ShootTargetInRange(unit=unit, targets=near_workers)
                     )
-                if only_threats:
+                if only_threats_without_memory:
                     harass_maneuver.add(
-                        ShootTargetInRange(unit=unit, targets=only_threats)
-                    )
-                if not only_threats and near_enemy:
-                    harass_maneuver.add(
-                        ShootTargetInRange(unit=unit, targets=near_enemy)
+                        ShootTargetInRange(
+                            unit=unit, targets=only_threats_without_memory
+                        )
                     )
 
             # low health and dangerous enemy, retreat and heal
