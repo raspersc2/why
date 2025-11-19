@@ -16,10 +16,15 @@ to use it as a resource or inspiration when creating your own bot.
 ## builds
 
 The following builds are available (with the possibility of more later):
+- ProxyReaperWithPf
 - MassMine
+- ProxyMarauder
 - Reapers
+- ProxyMarine
+- MightBeAWorkerRush
 - BattleCruiserRush
 - ThorDrop
+- WorkerRush
 
 ## testing
 This bot can be downloaded and used for testing via the [local play bootstrap docker image](https://github.com/aiarena/local-play-bootstrap).
