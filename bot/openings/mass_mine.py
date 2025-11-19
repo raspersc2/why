@@ -1,5 +1,4 @@
 from random import choice
-from typing import Callable
 
 from ares import AresBot
 from ares.behaviors.combat import CombatManeuver
@@ -25,8 +24,8 @@ from src.ares.consts import UnitRole
 from bot.combat.base_combat import BaseCombat
 from bot.combat.medivac_mine_drops import MedivacMineDrops
 from bot.combat.mine_combat import MineCombat
-from bot.openings.opening_base import OpeningBase
 from bot.openings.bio import Bio
+from bot.openings.opening_base import OpeningBase
 from bot.openings.reapers import Reapers
 
 ARMY_TYPES: set[UnitTypeId] = {
@@ -334,20 +333,9 @@ class MassMine(OpeningBase):
                 return
 
             for townhall in self.ai.townhalls:
-                if (
-                    not self.ai.can_afford(UnitTypeId.MISSILETURRET)
-                    or self.ai.structure_pending(UnitTypeId.MISSILETURRET)
-                    or len(
-                        [
-                            s
-                            for s in self.ai.mediator.get_own_structures_dict[
-                                UnitTypeId.ENGINEERINGBAY
-                            ]
-                            if s.is_ready
-                        ]
-                    )
-                    == 0
-                ):
+                if not self.ai.can_afford(
+                    UnitTypeId.MISSILETURRET
+                ) or self.ai.structure_pending(UnitTypeId.MISSILETURRET):
                     break
 
                 location: Point2 = townhall.position

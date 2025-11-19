@@ -19,11 +19,11 @@ from sc2.unit import Unit
 from sc2.units import Units
 
 from bot.combat.base_combat import BaseCombat
-from bot.openings.bio import Bio
 from bot.combat.battle_cruiser_combat import BattleCruiserCombat
 from bot.combat.generic_drops import GenericDrops
 from bot.combat.ground_range_combat import GroundRangeCombat
 from bot.consts import COMMON_UNIT_IGNORE_TYPES
+from bot.openings.bio import Bio
 from bot.openings.opening_base import OpeningBase
 from bot.openings.reapers import Reapers
 

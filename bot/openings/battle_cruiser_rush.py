@@ -1,23 +1,25 @@
-from sc2.unit import Unit
-from src.ares.consts import UnitRole
-
 from ares import AresBot
 from cython_extensions import cy_unit_pending
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.ids.upgrade_id import UpgradeId
 from sc2.position import Point2
+from sc2.unit import Unit
 from sc2.units import Units
+
+from bot.openings.reapers import Reapers
+from src.ares.consts import UnitRole
 
 from bot.combat.base_combat import BaseCombat
 from bot.combat.battle_cruiser_combat import BattleCruiserCombat
-from bot.combat.ground_range_combat import GroundRangeCombat
 from bot.openings.bio import Bio
 from bot.openings.opening_base import OpeningBase
 
 
 class BattleCruiserRush(OpeningBase):
     _bio: OpeningBase
+    _battle_cruiser_combat: BaseCombat
     _ground_range_combat: BaseCombat
+    _reapers: OpeningBase
 
     def __init__(self):
         super().__init__()
@@ -42,9 +44,14 @@ class BattleCruiserRush(OpeningBase):
         self._bio = Bio()
         await self._bio.on_start(ai)
 
+        self._reapers = Reapers()
+        await self._reapers.on_start(ai)
+
     async def on_step(self) -> None:
         if self.ai.build_order_runner.build_completed:
             self._macro()
+
+        await self._reapers.on_step()
 
         attack_target: Point2 = self.attack_target
         bcs: Units = self.ai.mediator.get_own_army_dict[UnitTypeId.BATTLECRUISER]

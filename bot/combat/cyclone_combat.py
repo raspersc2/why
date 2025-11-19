@@ -6,7 +6,7 @@ from ares.behaviors.combat import CombatManeuver
 from ares.behaviors.combat.individual import KeepUnitSafe, PathUnitToTarget, UseAbility
 from ares.consts import UnitTreeQueryType
 from ares.managers.manager_mediator import ManagerMediator
-from cython_extensions import cy_distance_to_squared
+from cython_extensions import cy_distance_to_squared, cy_closest_to
 from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId as UnitID
 from sc2.position import Point2
@@ -29,7 +29,7 @@ DANGER_TO_AIR: set[UnitID] = {
 
 
 @dataclass
-class BattleCruiserCombat(BaseCombat):
+class CycloneCombat(BaseCombat):
     """Execute behavior for Tempest Combat.
 
     Parameters
@@ -56,12 +56,10 @@ class BattleCruiserCombat(BaseCombat):
             query_tree=UnitTreeQueryType.AllEnemy,
             return_as_dict=True,
         )
-        avoid_grid: np.ndarray = self.mediator.get_air_avoidance_grid
-        grid: np.ndarray = self.mediator.get_air_grid
+        avoid_grid: np.ndarray = self.mediator.get_ground_avoidance_grid
+        grid: np.ndarray = self.mediator.get_ground_grid
 
         for unit in units:
-            dist_to_target: float = cy_distance_to_squared(unit.position, target)
-            jump_ready: bool = AbilityId.EFFECT_TACTICALJUMP in unit.abilities
             close_enemy: list[Unit] = [
                 u
                 for u in near_enemy[unit.tag]
@@ -74,30 +72,15 @@ class BattleCruiserCombat(BaseCombat):
 
             attacking_maneuver: CombatManeuver = CombatManeuver()
             attacking_maneuver.add(KeepUnitSafe(unit=unit, grid=avoid_grid))
-            if jump_ready and dist_to_target > 2500:
-                jump_spot: Point2 = self.mediator.find_closest_safe_spot(
-                    from_pos=target, grid=grid, radius=10.0
-                )
-                attacking_maneuver.add(
-                    UseAbility(
-                        unit=unit,
-                        ability=AbilityId.EFFECT_TACTICALJUMP,
-                        target=jump_spot,
-                    )
-                )
-            elif unit.health < 225.0:
-                attacking_maneuver.add(
-                    PathUnitToTarget(
-                        unit=unit, target=self.ai.main_base_ramp.top_center, grid=grid
-                    )
-                )
-            else:
-                if close_enemy:
-                    if not self.mediator.is_position_safe(
-                        grid=grid, position=unit.position, weight_safety_limit=23.0
-                    ):
-                        attacking_maneuver.add(KeepUnitSafe(unit=unit, grid=grid))
 
+            if close_enemy:
+                if AbilityId.LOCKON_LOCKON in unit.abilities:
+                    _target: Unit = cy_closest_to(unit.position, close_enemy)
+                    attacking_maneuver.add(
+                        UseAbility(AbilityId.LOCKON_LOCKON, unit, _target)
+                    )
+                attacking_maneuver.add(KeepUnitSafe(unit=unit, grid=grid))
+            else:
                 attacking_maneuver.add(
                     PathUnitToTarget(unit=unit, target=target, grid=grid)
                 )

@@ -1,24 +1,22 @@
-from sc2.unit import Unit
-
-from bot.consts import COMMON_UNIT_IGNORE_TYPES, BIO_FORCES
+from ares import AresBot
 from ares.consts import (
+    ALL_STRUCTURES,
+    LOSS_MARGINAL_OR_WORSE,
+    VICTORY_CLOSE_OR_BETTER,
+    EngagementResult,
     UnitRole,
     UnitTreeQueryType,
-    ALL_STRUCTURES,
-    EngagementResult,
-    VICTORY_CLOSE_OR_BETTER,
-    LOSS_MARGINAL_OR_WORSE,
 )
-
-from ares import AresBot
+from ares.managers.squad_manager import UnitSquad
 from cython_extensions import cy_distance_to
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.position import Point2
+from sc2.unit import Unit
 from sc2.units import Units
 
-from ares.managers.squad_manager import UnitSquad
 from bot.combat.base_combat import BaseCombat
 from bot.combat.ground_range_combat import GroundRangeCombat
+from bot.consts import BIO_FORCES, COMMON_UNIT_IGNORE_TYPES
 from bot.openings.opening_base import OpeningBase
 
 STATIC_DEFENCE: set[UnitTypeId] = {
@@ -74,7 +72,7 @@ class Bio(OpeningBase):
                     self.ai.mediator.get_units_in_range(
                         start_points=[squad.squad_position],
                         distances=12.0,
-                        query_tree=UnitTreeQueryType.EnemyGround,
+                        query_tree=UnitTreeQueryType.AllEnemy,
                         return_as_dict=False,
                     )[0]
                 ).filter(

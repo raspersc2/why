@@ -2,20 +2,19 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Union
 
 import numpy as np
-from sc2.ids.ability_id import AbilityId
-
 from ares.behaviors.combat import CombatManeuver
 from ares.behaviors.combat.individual import (
+    AMove,
     KeepUnitSafe,
     PathUnitToTarget,
     ShootTargetInRange,
     StutterUnitBack,
     StutterUnitForward,
-    AMove,
 )
 from ares.consts import ALL_STRUCTURES, UnitTreeQueryType
 from ares.managers.manager_mediator import ManagerMediator
 from cython_extensions import cy_closest_to, cy_is_facing
+from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId as UnitID
 from sc2.position import Point2
 from sc2.unit import Unit
@@ -101,6 +100,7 @@ class GroundRangeCombat(BaseCombat):
                 priority_units: list[Unit] = [
                     u for u in priority_units if not u.is_flying
                 ]
+                close_enemy: list[Unit] = [u for u in close_enemy if not u.is_flying]
             attacking_maneuver: CombatManeuver = CombatManeuver()
             attacking_maneuver.add(KeepUnitSafe(unit=unit, grid=avoid_grid))
 

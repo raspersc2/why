@@ -1,29 +1,23 @@
-from sc2.ids.ability_id import AbilityId
-from sc2.unit import Unit
-
-from ares.consts import (
-    UnitRole,
-    UnitTreeQueryType,
-    EngagementResult,
-    VICTORY_CLOSE_OR_BETTER,
-    LOSS_MARGINAL_OR_WORSE,
-    WORKER_TYPES,
-)
-
 from ares import AresBot
-from cython_extensions import cy_distance_to_squared, cy_unit_pending
+from ares.consts import (
+    LOSS_MARGINAL_OR_WORSE,
+    VICTORY_CLOSE_OR_BETTER,
+    EngagementResult,
+    UnitRole,
+)
+from cython_extensions import cy_unit_pending
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.ids.upgrade_id import UpgradeId
 from sc2.position import Point2
-from sc2.units import Units
+from sc2.unit import Unit
 
 from bot.combat.base_combat import BaseCombat
 from bot.combat.battle_cruiser_combat import BattleCruiserCombat
 from bot.combat.ground_range_combat import GroundRangeCombat
 from bot.combat.scv_proxy_builder import SCVProxyBuilder
-from bot.consts import ProxySCVStatus, BIO_FORCES
-from bot.openings.opening_base import OpeningBase
+from bot.consts import BIO_FORCES
 from bot.openings.bio import Bio
+from bot.openings.opening_base import OpeningBase
 
 PATH_THRESHOLD: int = 100
 
@@ -49,8 +43,6 @@ class ProxyMarauder(OpeningBase):
     def __init__(self):
         super().__init__()
         self._attack_started: bool = False
-        # scv.tag: {"to_build": UnitTypeId, "pos": Point2, "ts": int, "status": str}
-        self._proxy_tracker: dict = dict()
         self._squad_id_to_engage_tracker: dict = dict()
 
     @property
@@ -73,7 +65,21 @@ class ProxyMarauder(OpeningBase):
                 return []
             return [UpgradeId.PUNISHERGRENADES]
         else:
-            return [UpgradeId.PUNISHERGRENADES, UpgradeId.SHIELDWALL]
+            upgrades = [
+                UpgradeId.SHIELDWALL,
+                UpgradeId.TERRANINFANTRYWEAPONSLEVEL1,
+                UpgradeId.TERRANINFANTRYARMORSLEVEL1,
+            ]
+            if self.ai.supply_workers >= 48:
+                upgrades.extend(
+                    [
+                        UpgradeId.TERRANINFANTRYWEAPONSLEVEL2,
+                        UpgradeId.TERRANINFANTRYARMORSLEVEL2,
+                        UpgradeId.TERRANINFANTRYWEAPONSLEVEL3,
+                        UpgradeId.TERRANINFANTRYARMORSLEVEL3,
+                    ]
+                )
+            return upgrades
 
     async def on_start(self, ai: AresBot) -> None:
         await super().on_start(ai)
@@ -87,11 +93,15 @@ class ProxyMarauder(OpeningBase):
         await self._bio.on_start(ai)
 
     async def on_step(self) -> None:
+        # Handle proxy construction
         proxy_scvs_amount: int = 2 if not self._proxy_complete else 0
-        if proxy_scvs := self._handle_proxy_scv_assignment(
+        proxy_scvs = self._handle_proxy_scv_assignment(
             proxy_scvs_amount, self._proxy_location
-        ):
-            await self._handle_proxy_rax_construction(proxy_scvs)
+        )
+        if proxy_scvs:
+            await self.proxy_construction_manager.handle_construction(
+                proxy_scvs, self._proxy_location, UnitTypeId.BARRACKS, 2
+            )
 
         if (
             len(
@@ -139,71 +149,3 @@ class ProxyMarauder(OpeningBase):
             if num_rax < 2
             else (16 if self.ai.supply_used < 22 else 19),
         )
-
-    async def _handle_proxy_rax_construction(self, proxy_scvs: Units) -> None:
-        for scv in proxy_scvs:
-            tag: int = scv.tag
-            if tag not in self._proxy_tracker:
-                if placement := self.ai.mediator.request_building_placement(
-                    base_location=self._proxy_location,
-                    structure_type=UnitTypeId.BARRACKS,
-                    closest_to=self.ai.enemy_start_locations[0],
-                ):
-                    self._proxy_tracker[tag] = {
-                        "to_build": UnitTypeId.BARRACKS,
-                        "pos": placement,
-                        "ts": self.ai.time,
-                        "status": ProxySCVStatus.Moving,
-                    }
-                continue
-
-            current_status: ProxySCVStatus = self._proxy_tracker[tag]["status"]
-            match current_status:
-                case ProxySCVStatus.Moving:
-                    target_pos: Point2 = self._proxy_tracker[tag]["pos"]
-                    to_build: UnitTypeId = self._proxy_tracker[tag]["to_build"]
-                    if (
-                        cy_distance_to_squared(scv.position, target_pos) <= 25.0
-                        and self.ai.tech_requirement_progress(to_build) >= 1.0
-                        and self.ai.can_afford(to_build)
-                    ):
-                        stuctures: list[Unit] = [
-                            s
-                            for s in self.ai.structures
-                            if cy_distance_to_squared(s.position, target_pos) < 9.0
-                        ]
-                        if len(stuctures) > 0:
-                            scv.smart(stuctures[0])
-                        else:
-                            scv.build(to_build, target_pos)
-                        self._proxy_tracker[tag]["status"] = ProxySCVStatus.Building
-                    else:
-                        scv.move(target_pos)
-                case ProxySCVStatus.Building:
-                    close_enemy_workers: Units = self.ai.mediator.get_units_in_range(
-                        start_points=[scv.position],
-                        distances=9.0,
-                        query_tree=UnitTreeQueryType.EnemyGround,
-                    )[0].filter(lambda u: u.type_id in WORKER_TYPES)
-                    if not scv.is_constructing_scv:
-                        self._proxy_tracker[tag]["status"] = ProxySCVStatus.Idle
-                    elif close_enemy_workers:
-                        scv(AbilityId.HALT)
-                        self._proxy_tracker[tag]["status"] = ProxySCVStatus.Defending
-                case ProxySCVStatus.Idle:
-                    self.ai.mediator.assign_role(tag=tag, role=UnitRole.GATHERING)
-                case ProxySCVStatus.Defending:
-                    target_pos: Point2 = self._proxy_tracker[tag]["pos"]
-
-                    close_enemy_workers: Units = self.ai.mediator.get_units_in_range(
-                        start_points=[scv.position],
-                        distances=11.0,
-                        query_tree=UnitTreeQueryType.EnemyGround,
-                    )[0].filter(lambda u: u.type_id in WORKER_TYPES)
-                    if close_enemy_workers:
-                        scv.attack(close_enemy_workers[0])
-                    if (
-                        not close_enemy_workers
-                        or cy_distance_to_squared(scv.position, target_pos) > 100.0
-                    ):
-                        self._proxy_tracker[tag]["status"] = ProxySCVStatus.Moving

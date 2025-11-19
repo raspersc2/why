@@ -3,17 +3,16 @@ import math
 from typing import Any, Optional
 
 import numpy as np
-from loguru import logger
-from sc2.position import Point2
-
 from ares import AresBot
 from ares.behaviors.combat.individual import KeepUnitSafe
 from ares.behaviors.macro.mining import Mining
-from ares.consts import ALL_STRUCTURES, UnitRole, TOWNHALL_TYPES
-from cython_extensions import cy_distance_to_squared, cy_closest_to, cy_towards
+from ares.consts import ALL_STRUCTURES, TOWNHALL_TYPES, UnitRole
+from cython_extensions import cy_closest_to, cy_distance_to_squared, cy_towards
+from loguru import logger
 from sc2.data import Race
 from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId
+from sc2.position import Point2
 from sc2.unit import Unit
 
 from bot.consts import UNIT_TYPE_TO_NUM_REPAIRERS
@@ -77,11 +76,14 @@ class MyBot(AresBot):
         await super(MyBot, self).on_step(iteration)
         if self.supply_used < 1:
             await self.client.leave()
-        self.register_behavior(Mining())
+
+        num_per_gas: int = 3 if self.supply_workers >= 13 else 0
+        self.register_behavior(Mining(workers_per_gas=num_per_gas))
 
         self._mules()
         self._general_repair()
-        self._look_for_terran_bunker()
+        if self.build_order_runner.chosen_opening != "WorkerRush":
+            self._look_for_terran_bunker()
 
         if self.opening_handler and hasattr(self.opening_handler, "on_step"):
             await self.opening_handler.on_step()
@@ -134,15 +136,14 @@ class MyBot(AresBot):
             if (
                 unit.health_percentage >= 1.0
                 or not unit.is_ready
-                or (
-                    type_id not in ALL_STRUCTURES
-                    and cy_distance_to_squared(unit.position, self.start_location)
-                    > 1600
-                )
+                or (cy_distance_to_squared(unit.position, self.start_location) > 2000.0)
                 or type_id not in UNIT_TYPE_TO_NUM_REPAIRERS
             ):
                 continue
             if type_id in ALL_STRUCTURES and unit.health_percentage > 0.95:
+                continue
+
+            if type_id == UnitTypeId.BUNKER and not unit.has_cargo:
                 continue
 
             if type_id in UNIT_TYPE_TO_NUM_REPAIRERS:
@@ -317,7 +318,7 @@ class MyBot(AresBot):
 
     @property
     def floating_enemy(self) -> bool:
-        if self.enemy_race != Race.Terran or self.time < 270.0:
+        if self.enemy_race != Race.Terran or self.time < 360.0:
             return False
 
         if (
@@ -340,10 +341,16 @@ class MyBot(AresBot):
     #
     #     # custom on_end logic here ...
     #
-    # async def on_building_construction_complete(self, unit: Unit) -> None:
-    #     await super(MyBot, self).on_building_construction_complete(unit)
-    #
-    #     # custom on_building_construction_complete logic here ...
+    async def on_building_construction_complete(self, unit: Unit) -> None:
+        await super(MyBot, self).on_building_construction_complete(unit)
+
+        if self.opening_handler and hasattr(
+            self.opening_handler, "on_building_construction_complete"
+        ):
+            self.opening_handler.on_building_construction_complete(unit)
+
+        # custom on_building_construction_complete logic here ...
+
     #
     # async def on_unit_created(self, unit: Unit) -> None:
     #     await super(MyBot, self).on_unit_created(unit)

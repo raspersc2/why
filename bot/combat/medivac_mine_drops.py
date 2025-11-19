@@ -2,8 +2,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
-from sc2.ids.unit_typeid import UnitTypeId
-
 from ares import ALL_STRUCTURES, ManagerMediator
 from ares.behaviors.combat import CombatManeuver
 from ares.behaviors.combat.individual import (
@@ -15,6 +13,7 @@ from ares.behaviors.combat.individual import (
 from ares.consts import WORKER_TYPES, UnitRole, UnitTreeQueryType
 from cython_extensions import cy_center, cy_in_pathing_grid_ma
 from sc2.ids.ability_id import AbilityId
+from sc2.ids.unit_typeid import UnitTypeId
 from sc2.ids.upgrade_id import UpgradeId
 from sc2.position import Point2
 from sc2.unit import Unit

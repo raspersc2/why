@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from ares.behaviors.combat import CombatManeuver
 from ares.behaviors.combat.individual import (
+    AMove,
     AttackTarget,
     KeepUnitSafe,
     MoveToSafeTarget,
@@ -11,7 +12,6 @@ from ares.behaviors.combat.individual import (
     ReaperGrenade,
     ShootTargetInRange,
     UseAbility,
-    AMove,
 )
 from ares.consts import (
     ALL_STRUCTURES,
@@ -218,11 +218,29 @@ class ReaperHarass(BaseCombat):
 
             # no enemies in sight, so let's sneak around
             elif not only_threats_without_memory:
+                # Check if there are enemy structures nearby when no unit threats exist
+                enemy_structures_nearby: list[Unit] = [
+                    s
+                    for s in near_enemy
+                    if s.type_id in ALL_STRUCTURES
+                    and s.type_id not in CREEP_TUMOR_TYPES
+                    and not s.is_memory
+                ]
+
                 if (
                     not only_threats
                     and cy_distance_to_squared(unit.position, harass_target) < 150.0
                 ):
-                    harass_maneuver.add(AMove(unit=unit, target=target))
+                    # If we're near the target and only structures exist, attack them directly
+                    if enemy_structures_nearby:
+                        closest_structure: Unit = cy_closest_to(
+                            unit.position, enemy_structures_nearby
+                        )
+                        harass_maneuver.add(
+                            AttackTarget(unit=unit, target=closest_structure)
+                        )
+                    else:
+                        harass_maneuver.add(AMove(unit=unit, target=target))
                 else:
                     harass_maneuver.add(
                         PathUnitToTarget(

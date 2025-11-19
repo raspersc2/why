@@ -1,8 +1,7 @@
-from sc2.data import Race
-
 from ares import AresBot
 from ares.managers.squad_manager import UnitSquad
-from cython_extensions import cy_closest_to, cy_center
+from cython_extensions import cy_center, cy_closest_to
+from sc2.data import Race
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.ids.upgrade_id import UpgradeId
 from sc2.position import Point2
@@ -142,6 +141,9 @@ class Reapers(OpeningBase):
         positions_to_check: list[Point2] = [th.position for th in enemy_townhalls]
         positions_to_check.append(self.ai.enemy_start_locations[0])
 
+        reaper_center: Point2 = Point2(cy_center(reapers))
+        best_distance: float = float("inf")
+
         for position_to_check in positions_to_check:
             result: EngagementResult = self.ai.mediator.can_win_fight(
                 own_units=reapers,
@@ -151,8 +153,16 @@ class Reapers(OpeningBase):
                     query_tree=UnitTreeQueryType.EnemyGround,
                 )[0].filter(lambda u: u.type_id not in WORKER_TYPES),
             )
+
+            # Only update if strictly better, or if equal then choose closer target
             if result.value > best_engagement_result.value:
                 potential_harass_target = position_to_check
                 best_engagement_result = result
+                best_distance = reaper_center.distance_to(position_to_check)
+            elif result.value == best_engagement_result.value:
+                distance = reaper_center.distance_to(position_to_check)
+                if distance < best_distance:
+                    potential_harass_target = position_to_check
+                    best_distance = distance
 
         self.reaper_harass_target = potential_harass_target

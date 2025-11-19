@@ -11,49 +11,82 @@ BuildChoices:
     test_123:
         BotName: Test
         Cycle:
-            - ProxyMarauder
+#            - WorkerRush
+#            - MightBeAWorkerRush
+#            - ProxyMarine
+#            - ProxyReaperWithPf
+#            - Turtle
+#            - ProxyMarauder
 #            - MassMine
 #            - Reapers
 #            - BattleCruiserRush
-#            - ThorDrop
+            - ThorDrop
 
     Protoss:
         BotName: ProtossRace
         Cycle:
+            - ProxyReaperWithPf
             - MassMine
             - ProxyMarauder
             - Reapers
+            - ProxyMarine
+            - MightBeAWorkerRush
             - BattleCruiserRush
             - ThorDrop
+            - WorkerRush
 
     Random:
         BotName: RandomRace
         Cycle:
+            - ProxyReaperWithPf
             - MassMine
             - ProxyMarauder
             - Reapers
+            - ProxyMarine
+            - MightBeAWorkerRush
             - BattleCruiserRush
             - ThorDrop
+            - WorkerRush
 
     Terran:
         BotName: TerranRace
         Cycle:
+            - ProxyReaperWithPf
             - MassMine
             - ProxyMarauder
             - Reapers
+            - ProxyMarine
+            - MightBeAWorkerRush
             - BattleCruiserRush
             - ThorDrop
+            - WorkerRush
 
     Zerg:
         BotName: ZergRace
         Cycle:
+            - ProxyReaperWithPf
             - MassMine
             - ProxyMarauder
             - Reapers
+            - ProxyMarine
+            - MightBeAWorkerRush
             - BattleCruiserRush
             - ThorDrop
+            - WorkerRush
 
 Builds:
+    Turtle:
+      ConstantWorkerProductionTill: 60
+      PersistentWorker: False
+      OpeningBuildOrder:
+        - 14 supplydepot
+        - 14 expand
+        - 16 barracks
+        - 16 gas *2
+        - 16 orbital
+        - 16 orbital
+        - 16 gas *2
+
     BattleCruiserRush:
       ConstantWorkerProductionTill: 0
       PersistentWorker: False
@@ -102,12 +135,6 @@ Builds:
         - 0 widowmine *2
         - 0 starport
 
-    # proxy rax with marine, once orbital is done pull scvs
-    WorkerRush:
-      - 14 supplydepot
-    # marine/tanks/static defence -> do nothing till mined out, then attack with everything!
-    TwoBaseTurtle:
-      - 14 supplydepot
     # pull scvs
     ProxyMarauder:
       ConstantWorkerProductionTill: 0
@@ -116,8 +143,18 @@ Builds:
         - 12 scv
         - 13 supplydepot
         - 13 scv
-    ProxyRaxInMain:
-      - 14 supplydepot
+    ProxyMarine:
+      ConstantWorkerProductionTill: 0
+      PersistentWorker: False
+      OpeningBuildOrder:
+        - 12 scv
+        - 13 supplydepot
+    ProxyReaperWithPf:
+      ConstantWorkerProductionTill: 0
+      PersistentWorker: False
+      OpeningBuildOrder:
+        - 12 scv *2
+        - 12 supplydepot
     # add hellions when possible
     Reapers:
       ConstantWorkerProductionTill: 0
@@ -140,10 +177,6 @@ Builds:
         - 0 barracks
         - 0 reaper *3
         - 0 factory
-
-    # stim / shields / scv allin
-    ThreeRaxAllin:
-      - 14 supplydepot
     # marine / scv allin
     ThorDrop:
       ConstantWorkerProductionTill: 0
@@ -169,5 +202,16 @@ Builds:
         - 0 starport
         - 0 marine
         - 0 supply
+    MightBeAWorkerRush:
+      ConstantWorkerProductionTill: 0
+      PersistentWorker: False
+      OpeningBuildOrder:
+        - 12 scv *2
+        - 12 supplydepot
+    WorkerRush:
+      ConstantWorkerProductionTill: 0
+      PersistentWorker: False
+      OpeningBuildOrder:
+        - 12 scv *3
 
 
