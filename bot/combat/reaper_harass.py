@@ -229,7 +229,7 @@ class ReaperHarass(BaseCombat):
 
                 if (
                     not only_threats
-                    and cy_distance_to_squared(unit.position, harass_target) < 150.0
+                    and self.ai.is_visible(target)
                 ):
                     # If we're near the target and only structures exist, attack them directly
                     if enemy_structures_nearby:

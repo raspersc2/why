@@ -67,10 +67,10 @@ class MassMine(OpeningBase):
     @property
     def army_comp(self) -> dict:
         if (
-            self.ai.supply_army < 46
-            and len(self.ai.townhalls) <= 1
+            self.ai.supply_army < 70
+            and len(self.ai.townhalls) <= 2
             and self.ai.time < 420.0
-            and self.ai.supply_workers < 27
+            and self.ai.supply_workers < 36
         ):
             return {
                 UnitTypeId.WIDOWMINE: {"proportion": 0.8, "priority": 1},
