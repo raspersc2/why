@@ -92,6 +92,9 @@ class MyBot(AresBot):
             await self.chat_send(
                 f"Tag: {self.build_order_runner.chosen_opening}", team_only=True
             )
+            await self.chat_send(
+                f"Tag: {self.race.name}", team_only=True
+            )
             self.opening_chat_tag = True
 
         if not self._switched_to_prevent_tie and self.floating_enemy:
