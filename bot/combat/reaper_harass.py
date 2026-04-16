@@ -110,7 +110,6 @@ class ReaperHarass(BaseCombat):
                         or u.type_id == UnitID.MULE
                     )
                 )
-                or (u.type_id in STATIC_DEFENCE)
                 or (u.type_id in CREEP_TUMOR_TYPES and u.is_active)
             )
         ]
@@ -160,6 +159,7 @@ class ReaperHarass(BaseCombat):
             )
 
         _can_engage: bool = fight_result not in LOSS_MARGINAL_OR_WORSE
+        enemy_army = self.mediator.get_cached_enemy_army
 
         for unit in units:
             target: Point2 = harass_target
@@ -193,8 +193,12 @@ class ReaperHarass(BaseCombat):
             )
 
             can_shoot: bool = True
-            if low_health and not self.mediator.is_position_safe(
-                grid=reaper_grid, position=unit.position
+            if (
+                enemy_army
+                and low_health
+                and not self.mediator.is_position_safe(
+                    grid=reaper_grid, position=unit.position
+                )
             ):
                 can_shoot = False
             # don't hesitate shooting things
@@ -223,14 +227,11 @@ class ReaperHarass(BaseCombat):
                     s
                     for s in near_enemy
                     if s.type_id in ALL_STRUCTURES
-                    and s.type_id not in CREEP_TUMOR_TYPES
+                    and s.type_id not in STATIC_DEFENCE
                     and not s.is_memory
                 ]
 
-                if (
-                    not only_threats
-                    and self.ai.is_visible(target)
-                ):
+                if not only_threats and self.ai.is_visible(target):
                     # If we're near the target and only structures exist, attack them directly
                     if enemy_structures_nearby:
                         closest_structure: Unit = cy_closest_to(
