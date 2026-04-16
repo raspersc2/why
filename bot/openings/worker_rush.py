@@ -11,7 +11,6 @@ from sc2.position import Point2
 from sc2.unit import Unit
 from sc2.units import Units
 
-from ares.behaviors.combat.individual import PathUnitToTarget
 from ares.cache import property_cache_once_per_frame
 from ares.managers.squad_manager import UnitSquad
 from bot.consts import COMMON_UNIT_IGNORE_TYPES
@@ -56,6 +55,8 @@ class WorkerRush(OpeningBase):
         if self.ai.build_order_runner.chosen_opening == "WorkerRush":
             self._start_attack_at_time = 7
             self._max_scvs_in_attack = 11
+        elif self.ai.build_order_runner.chosen_opening != "MightBeAWorkerRush":
+            self._max_scvs_in_attack = 15
 
     async def on_step(self) -> None:
         if not self._attack_started:

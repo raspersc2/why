@@ -105,8 +105,7 @@ class GroundRangeCombat(BaseCombat):
             attacking_maneuver.add(KeepUnitSafe(unit=unit, grid=avoid_grid))
 
             attacking_maneuver.add(ShootTargetInRange(unit, priority_units))
-            if not priority_units:
-                attacking_maneuver.add(ShootTargetInRange(unit, close_enemy))
+            attacking_maneuver.add(ShootTargetInRange(unit, close_enemy))
 
             if can_engage:
                 if close_enemy:

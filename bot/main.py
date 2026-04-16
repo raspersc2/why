@@ -50,6 +50,7 @@ class MyBot(AresBot):
         self._switched_to_prevent_tie: bool = False
         self.injured_general_unit_to_repairing_scvs: dict[int, set[int]] = dict()
         self._terran_bunker_finder_activated: bool = False
+        self._switched_due_to_worker_rush: bool = False
 
     def load_opening(self, opening_name: str) -> None:
         """Load opening from bot.openings.<snake_case> with class <PascalCase>"""
@@ -88,13 +89,23 @@ class MyBot(AresBot):
         if self.opening_handler and hasattr(self.opening_handler, "on_step"):
             await self.opening_handler.on_step()
 
+        if (
+            not self._switched_due_to_worker_rush
+            and self.mediator.get_enemy_worker_rushed
+        ):
+            self.load_opening("WorkerRush")
+            if hasattr(self.opening_handler, "on_start"):
+                await self.opening_handler.on_start(self)
+            self.build_order_runner.set_build_completed()
+            self.mediator.get_building_tracker_dict.clear()
+            self._switched_due_to_worker_rush = True
+            logger.info(f"{self.time_formatted} - Switched to WorkerRush")
+
         if not self.opening_chat_tag and self.time > 5.0:
             await self.chat_send(
                 f"Tag: {self.build_order_runner.chosen_opening}", team_only=True
             )
-            await self.chat_send(
-                f"Tag: {self.race.name}", team_only=True
-            )
+            await self.chat_send(f"Tag: {self.race.name}", team_only=True)
             self.opening_chat_tag = True
 
         if not self._switched_to_prevent_tie and self.floating_enemy:

@@ -107,9 +107,10 @@ class Reapers(OpeningBase):
 
         if self.ai.mediator.get_enemy_ling_rushed and self.ai.mediator.get_enemy_ground:
             ground: Units = self.ai.mediator.get_enemy_ground
-            self.reaper_harass_target = cy_closest_to(self.ai.start_location, ground).position
+            self.reaper_harass_target = cy_closest_to(
+                self.ai.start_location, ground
+            ).position
             return
-
 
         if self.ai.enemy_race == Race.Terran:
             unfinished_bunkers = [

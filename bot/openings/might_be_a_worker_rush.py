@@ -30,6 +30,7 @@ class MightBeAWorkerRush(OpeningBase):
 
     def __init__(self):
         super().__init__()
+        self._should_macro: bool = False
 
     @property
     def army_comp(self) -> dict:
@@ -53,9 +54,9 @@ class MightBeAWorkerRush(OpeningBase):
         await self._worker_rush.on_start(ai)
 
     async def on_step(self) -> None:
-        if (
-            self.ai.build_order_runner.build_completed
-            and len(self.ai.mediator.get_own_structures_dict[UnitTypeId.BARRACKS]) > 0
+        if self.ai.build_order_runner.build_completed and (
+            len(self.ai.mediator.get_own_structures_dict[UnitTypeId.BARRACKS]) > 0
+            or self._should_macro
         ):
             self._macro()
 
@@ -64,6 +65,9 @@ class MightBeAWorkerRush(OpeningBase):
         await self._bio.on_step(target=attack_target)
 
         await self._handle_proxy_rax()
+
+        if not self._should_macro and self.ai.minerals > 300:
+            self._should_macro = True
 
     def _macro(self):
         self._generic_macro_plan(
