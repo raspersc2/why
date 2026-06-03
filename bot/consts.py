@@ -42,7 +42,6 @@ COMMON_UNIT_IGNORE_TYPES: set[UnitID] = {
     UnitID.MULE,
 }
 
-
 UNIT_TYPE_TO_NUM_REPAIRERS: dict[UnitID, int] = {
     UnitID.BUNKER: 4,
     UnitID.SUPPLYDEPOT: 3,

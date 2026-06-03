@@ -1,3 +1,4 @@
+import numpy as np
 from sc2.ids.ability_id import AbilityId
 
 from ares import AresBot
@@ -11,7 +12,7 @@ from sc2.position import Point2
 from sc2.unit import Unit
 from sc2.units import Units
 
-from ares.cache import property_cache_once_per_frame
+from ares.behaviors.combat.individual import WorkerKiteBack, KeepUnitSafe
 from ares.managers.squad_manager import UnitSquad
 from bot.consts import COMMON_UNIT_IGNORE_TYPES
 from src.ares.consts import UnitRole, UnitTreeQueryType
@@ -36,14 +37,6 @@ class WorkerRush(OpeningBase):
         self._stack_for: float = 1.85
         self._low_health_tags: set[int] = set()
 
-    @property_cache_once_per_frame
-    def healing_spot(self) -> Point2:
-        return self.ai.mediator.find_closest_safe_spot(
-            from_pos=self.target_healing_pos,
-            grid=self.ai.mediator.get_ground_grid,
-            radius=15.0,
-        )
-
     async def on_start(self, ai: AresBot) -> None:
         await super().on_start(ai)
         self._bio = Bio()
@@ -53,6 +46,7 @@ class WorkerRush(OpeningBase):
         self.target_healing_pos = self.ai.game_info.map_center
 
         if self.ai.build_order_runner.chosen_opening == "WorkerRush":
+            self.ai.client.game_step = 1
             self._start_attack_at_time = 7
             self._max_scvs_in_attack = 11
         elif self.ai.build_order_runner.chosen_opening != "MightBeAWorkerRush":
@@ -76,7 +70,6 @@ class WorkerRush(OpeningBase):
         pos_of_main_squad: Point2 = self.ai.mediator.get_position_of_main_squad(
             role=UnitRole.CONTROL_GROUP_EIGHT
         )
-
         for squad in squads:
             if self.ai.time < self._start_attack_at_time + self._stack_for:
                 mf: Unit = cy_closest_to(self.ai.start_location, self.ai.mineral_field)
@@ -87,9 +80,18 @@ class WorkerRush(OpeningBase):
                         unit.gather(mf)
                 continue
 
-            target: Point2 = (
-                self.attack_target if squad.main_squad else pos_of_main_squad
-            )
+            if self.ai.time < 150.0 and (
+                flying_structures := [
+                    s
+                    for s in self.ai.enemy_structures
+                    if s.is_flying and not s.is_memory
+                ]
+            ):
+                target: Point2 = flying_structures[0].position
+            else:
+                target: Point2 = (
+                    self.attack_target if squad.main_squad else pos_of_main_squad
+                )
             close_ground_enemy: Units = self.ai.mediator.get_units_in_range(
                 start_points=[squad.squad_position],
                 distances=12.5,
@@ -134,6 +136,7 @@ class WorkerRush(OpeningBase):
         healing: Units = self.ai.mediator.get_units_from_role(
             role=UnitRole.CONTROL_GROUP_ONE
         )
+        grid: np.ndarray = self.ai.mediator.get_ground_grid
         for worker in all_workers:
             health_perc: float = worker.health_percentage
             if health_perc < 0.4 and len(all_workers) >= 3:
@@ -152,24 +155,32 @@ class WorkerRush(OpeningBase):
                 )
 
             if worker.tag in self._low_health_tags:
-                close_ground_enemy: Units = self.ai.mediator.get_units_in_range(
-                    start_points=[worker.position],
-                    distances=12.5,
-                    query_tree=UnitTreeQueryType.EnemyGround,
-                )[0].filter(lambda u: u.type_id not in COMMON_UNIT_IGNORE_TYPES)
-                if close_ground_enemy:
-                    worker.gather(
-                        cy_closest_to(self.ai.start_location, self.ai.mineral_field)
+                nearby_units: list[Unit] = [
+                    w
+                    for w in self.ai.all_units
+                    if cy_distance_to_squared(w.position, worker.position) < 7.5
+                    and w.tag != worker.tag
+                    and w.tag not in self._low_health_tags
+                ]
+                if len(nearby_units) >= 4:
+                    self.ai.register_behavior(
+                        WorkerKiteBack(worker, nearby_units[0], should_attack=False)
                     )
-                # lone worker should move back
+
                 else:
+                    if KeepUnitSafe(worker, grid).execute(
+                        self.ai, self.ai.config, self.ai.mediator
+                    ):
+                        continue
                     close_healing: list[Unit] = [
                         u
                         for u in healing
                         if cy_distance_to_squared(worker.position, u.position) < 25.0
                     ]
                     if len(healing) == 1:
-                        worker.move(self.attack_target)
+                        KeepUnitSafe(worker, grid).execute(
+                            self.ai, self.ai.config, self.ai.mediator
+                        )
                     elif len(close_healing) >= 2:
                         worker(AbilityId.STOP)
                     else:

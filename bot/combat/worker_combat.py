@@ -48,7 +48,7 @@ class WorkerCombat(BaseCombat):
         )
         avoid_grid: np.ndarray = self.mediator.get_air_avoidance_grid
         grid: np.ndarray = self.mediator.get_ground_grid
-        can_attack_structures: bool = self.ai.time > 120.0
+        can_attack_structures: bool = self.ai.time > 90.0
         close_enemy: list[Unit] = [
             u
             for u in close_enemy
@@ -74,19 +74,18 @@ class WorkerCombat(BaseCombat):
                 attacking_maneuver.add(ShootTargetInRange(unit, close_enemy))
             if close_enemy:
                 target_unit: Unit | None = None
-                if only_enemy_units:
+                if only_enemy_units and len(only_enemy_units) >= 3:
                     target_unit = cy_closest_to(unit.position, only_enemy_units)
                 elif can_attack_structures:
                     target_unit = cy_closest_to(unit.position, close_enemy)
-                if not target_unit:
-                    pass
-                elif not self.mediator.is_position_safe(
+
+                if target_unit and not self.mediator.is_position_safe(
                     grid=grid, position=unit.position
                 ):
                     attacking_maneuver.add(
                         WorkerKiteBack(unit=unit, target=target_unit)
                     )
-                else:
+                elif target_unit:
                     attacking_maneuver.add(AttackTarget(unit=unit, target=target_unit))
 
             attacking_maneuver.add(
