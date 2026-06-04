@@ -139,7 +139,7 @@ class WorkerRush(OpeningBase):
         grid: np.ndarray = self.ai.mediator.get_ground_grid
         for worker in all_workers:
             health_perc: float = worker.health_percentage
-            if health_perc < 0.4 and len(all_workers) >= 3:
+            if health_perc < 0.4 and len(all_workers) >= 3 and self.ai.minerals > 0:
                 self._low_health_tags.add(worker.tag)
                 self.ai.mediator.assign_role(
                     tag=worker.tag, role=UnitRole.CONTROL_GROUP_ONE
@@ -148,6 +148,7 @@ class WorkerRush(OpeningBase):
                 health_perc >= 1.0
                 or len(all_workers) < 3
                 or (len(healing) == 1 and health_perc >= 0.6)
+                or self.ai.minerals <= 0
             ):
                 self._low_health_tags.remove(worker.tag)
                 self.ai.mediator.assign_role(
