@@ -207,7 +207,7 @@ class ProxyReaperWithPf(OpeningBase):
             for s in ccs
             if s.is_ready
             and cy_distance_to_squared(s.position, target) > 380.0
-            and cy_distance_to_squared(s.position, self.ai.start_location) > 200.0
+            and cy_distance_to_squared(s.position, self.ai.start_location) > 3600.0
         ]
 
         if len(ready_ccs) > 0:

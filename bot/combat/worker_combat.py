@@ -46,9 +46,12 @@ class WorkerCombat(BaseCombat):
         target: Point2 = (
             kwargs["target"] if "target" in kwargs else self.ai.enemy_start_locations[0]
         )
+        ramp_walled_off = (
+            kwargs["ramp_walled_off"] if "ramp_walled_off" in kwargs else False
+        )
         avoid_grid: np.ndarray = self.mediator.get_air_avoidance_grid
         grid: np.ndarray = self.mediator.get_ground_grid
-        can_attack_structures: bool = self.ai.time > 90.0
+        can_attack_structures: bool = self.ai.time > 90.0 or ramp_walled_off
         close_enemy: list[Unit] = [
             u
             for u in close_enemy
@@ -70,7 +73,7 @@ class WorkerCombat(BaseCombat):
             attacking_maneuver: CombatManeuver = CombatManeuver()
             attacking_maneuver.add(KeepUnitSafe(unit=unit, grid=avoid_grid))
             attacking_maneuver.add(ShootTargetInRange(unit, only_enemy_units))
-            if not only_enemy_units and can_attack_structures:
+            if (not only_enemy_units and can_attack_structures) or ramp_walled_off:
                 attacking_maneuver.add(ShootTargetInRange(unit, close_enemy))
             if close_enemy:
                 target_unit: Unit | None = None

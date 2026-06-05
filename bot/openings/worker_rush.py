@@ -36,6 +36,7 @@ class WorkerRush(OpeningBase):
         self._max_scvs_in_attack: int = 9
         self._stack_for: float = 1.85
         self._low_health_tags: set[int] = set()
+        self._enemy_walled_off: bool = False
 
     async def on_start(self, ai: AresBot) -> None:
         await super().on_start(ai)
@@ -57,6 +58,13 @@ class WorkerRush(OpeningBase):
             if self.ai.time >= self._start_attack_at_time:
                 self._attack_started = True
             return
+
+        if not self._enemy_walled_off and self.ai.state.game_loop % 20 == 0:
+            self._enemy_walled_off = self.ai.main_ramp_walled_off(
+                self.ai.mediator.get_enemy_ramp
+            )
+            if self._enemy_walled_off:
+                await self.ai.chat_send(f"Tag: {self.ai.time_formatted}: WallOff")
 
         await self._assign_workers()
 
@@ -101,6 +109,7 @@ class WorkerRush(OpeningBase):
                 units=squad.squad_units,
                 all_close_enemy=close_ground_enemy,
                 target=target,
+                ramp_walled_off=self._enemy_walled_off,
             )
 
     def on_unit_created(self, unit: Unit) -> None:
