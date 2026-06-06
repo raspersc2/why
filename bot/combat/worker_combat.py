@@ -64,6 +64,7 @@ class WorkerCombat(BaseCombat):
         only_enemy_units: list[Unit] = [
             u for u in close_enemy if u.type_id not in ALL_STRUCTURES
         ]
+        enemy_structures = [u for u in close_enemy if u.type_id in ALL_STRUCTURES]
 
         for unit in units:
             if unit.is_carrying_minerals:
@@ -79,8 +80,8 @@ class WorkerCombat(BaseCombat):
                 target_unit: Unit | None = None
                 if only_enemy_units and len(only_enemy_units) >= 3:
                     target_unit = cy_closest_to(unit.position, only_enemy_units)
-                elif can_attack_structures:
-                    target_unit = cy_closest_to(unit.position, close_enemy)
+                elif can_attack_structures and enemy_structures:
+                    target_unit = cy_closest_to(unit.position, enemy_structures)
 
                 if target_unit and not self.mediator.is_position_safe(
                     grid=grid, position=unit.position
