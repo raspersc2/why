@@ -18,6 +18,7 @@ from sc2.unit import Unit
 from sc2.units import Units
 
 from bot.combat.base_combat import BaseCombat
+from bot.consts import SUPPLY_TYPES
 
 if TYPE_CHECKING:
     from ares import AresBot
@@ -65,6 +66,7 @@ class WorkerCombat(BaseCombat):
             u for u in close_enemy if u.type_id not in ALL_STRUCTURES
         ]
         enemy_structures = [u for u in close_enemy if u.type_id in ALL_STRUCTURES]
+        close_supply = [u for u in enemy_structures if u.type_id in SUPPLY_TYPES]
 
         for unit in units:
             if unit.is_carrying_minerals:
@@ -74,12 +76,15 @@ class WorkerCombat(BaseCombat):
             attacking_maneuver: CombatManeuver = CombatManeuver()
             attacking_maneuver.add(KeepUnitSafe(unit=unit, grid=avoid_grid))
             attacking_maneuver.add(ShootTargetInRange(unit, only_enemy_units))
+            attacking_maneuver.add(ShootTargetInRange(unit, close_supply))
             if (not only_enemy_units and can_attack_structures) or ramp_walled_off:
                 attacking_maneuver.add(ShootTargetInRange(unit, close_enemy))
             if close_enemy:
                 target_unit: Unit | None = None
                 if only_enemy_units and len(only_enemy_units) >= 3:
                     target_unit = cy_closest_to(unit.position, only_enemy_units)
+                elif close_supply:
+                    target_unit = cy_closest_to(unit.position, close_supply)
                 elif can_attack_structures and enemy_structures:
                     target_unit = cy_closest_to(unit.position, enemy_structures)
 

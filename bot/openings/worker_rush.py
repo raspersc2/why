@@ -88,18 +88,9 @@ class WorkerRush(OpeningBase):
                         unit.gather(mf)
                 continue
 
-            if self.ai.time < 150.0 and (
-                flying_structures := [
-                    s
-                    for s in self.ai.enemy_structures
-                    if s.is_flying and not s.is_memory
-                ]
-            ):
-                target: Point2 = flying_structures[0].position
-            else:
-                target: Point2 = (
-                    self.attack_target if squad.main_squad else pos_of_main_squad
-                )
+            target: Point2 = (
+                self.attack_target if squad.main_squad else pos_of_main_squad
+            )
             close_ground_enemy: Units = self.ai.mediator.get_units_in_range(
                 start_points=[squad.squad_position],
                 distances=12.5,
