@@ -47,7 +47,6 @@ class WorkerRush(OpeningBase):
         self.target_healing_pos = self.ai.game_info.map_center
 
         if self.ai.build_order_runner.chosen_opening == "WorkerRush":
-            self.ai.client.game_step = 1
             self._start_attack_at_time = 7
             self._max_scvs_in_attack = 11
         elif self.ai.build_order_runner.chosen_opening != "MightBeAWorkerRush":
