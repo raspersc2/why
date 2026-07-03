@@ -1,10 +1,6 @@
-from sc2.ids.ability_id import AbilityId
-
 from ares import AresBot
 from cython_extensions import (
-    cy_closest_to,
-    cy_distance_to_squared,
-    cy_center,
+    cy_distance_to_squared
 )
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.position import Point2
@@ -13,12 +9,7 @@ from sc2.units import Units
 
 from ares.behaviors.combat.individual import PathUnitToTarget
 from ares.cache import property_cache_once_per_frame
-from ares.managers.squad_manager import UnitSquad
-from bot.consts import COMMON_UNIT_IGNORE_TYPES
-from src.ares.consts import UnitRole, UnitTreeQueryType
-
-from bot.combat.base_combat import BaseCombat
-from bot.combat.worker_combat import WorkerCombat
+from src.ares.consts import UnitRole
 from bot.openings.bio import Bio
 from bot.openings.opening_base import OpeningBase
 from bot.openings.worker_rush import WorkerRush

@@ -49,6 +49,10 @@ class WorkerRush(OpeningBase):
         if self.ai.build_order_runner.chosen_opening == "WorkerRush":
             self._start_attack_at_time = 7
             self._max_scvs_in_attack = 11
+        elif self.ai.build_order_runner.chosen_opening == "WorkerRushFast":
+            self._start_attack_at_time = 0
+            self._max_scvs_in_attack = 10
+            self._stack_for = 0.0
         elif self.ai.build_order_runner.chosen_opening != "MightBeAWorkerRush":
             self._max_scvs_in_attack = 15
 
@@ -116,7 +120,7 @@ class WorkerRush(OpeningBase):
                 role: UnitRole = (
                     UnitRole.PROXY_WORKER
                     if num_assigned == 0
-                    and self.ai.build_order_runner.chosen_opening != "WorkerRush"
+                    and self.ai.build_order_runner.chosen_opening == "MightBeAWorkerRush"
                     else UnitRole.CONTROL_GROUP_EIGHT
                 )
 

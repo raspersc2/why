@@ -12,6 +12,7 @@ BuildChoices:
         BotName: Test
         Cycle:
 #            - WorkerRush
+            - WorkerRushFast
 #            - MightBeAWorkerRush
 #            - ProxyMarine
 #            - ProxyReaperWithPf
@@ -20,7 +21,7 @@ BuildChoices:
 #            - MassMine
 #            - Reapers
 #            - BattleCruiserRush
-            - ThorDrop
+#            - ThorDrop
 
     Protoss:
         BotName: ProtossRace
@@ -28,6 +29,7 @@ BuildChoices:
             - ProxyReaperWithPf
             - MassMine
             - ProxyMarauder
+            - WorkerRushFast
             - Reapers
             - ProxyMarine
             - MightBeAWorkerRush
@@ -41,6 +43,7 @@ BuildChoices:
             - ProxyReaperWithPf
             - MassMine
             - ProxyMarauder
+            - WorkerRushFast
             - Reapers
             - ProxyMarine
             - MightBeAWorkerRush
@@ -54,6 +57,7 @@ BuildChoices:
             - ProxyReaperWithPf
             - MassMine
             - ProxyMarauder
+            - WorkerRushFast
             - Reapers
             - ProxyMarine
             - MightBeAWorkerRush
@@ -67,6 +71,7 @@ BuildChoices:
             - ProxyReaperWithPf
             - MassMine
             - ProxyMarauder
+            - WorkerRushFast
             - Reapers
             - ProxyMarine
             - MightBeAWorkerRush
@@ -213,5 +218,10 @@ Builds:
       PersistentWorker: False
       OpeningBuildOrder:
         - 12 scv *3
+    WorkerRushFast:
+      ConstantWorkerProductionTill: 0
+      PersistentWorker: False
+      OpeningBuildOrder:
+        - 12 scv
 
 
