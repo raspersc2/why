@@ -98,6 +98,8 @@ class WorkerCombat(BaseCombat):
                     attacking_maneuver.add(AttackTarget(unit=unit, target=target_unit))
 
             attacking_maneuver.add(
-                PathUnitToTarget(unit=unit, target=target, grid=grid)
+                PathUnitToTarget(
+                    unit=unit, target=target, grid=grid, sense_danger=False
+                )
             )
             self.ai.register_behavior(attacking_maneuver)

@@ -16,6 +16,3 @@ class WorkerRushFast(OpeningBase):
 
     async def on_step(self) -> None:
         await self._worker_rush.on_step()
-
-
-

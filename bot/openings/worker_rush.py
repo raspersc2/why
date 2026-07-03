@@ -120,7 +120,8 @@ class WorkerRush(OpeningBase):
                 role: UnitRole = (
                     UnitRole.PROXY_WORKER
                     if num_assigned == 0
-                    and self.ai.build_order_runner.chosen_opening == "MightBeAWorkerRush"
+                    and self.ai.build_order_runner.chosen_opening
+                    == "MightBeAWorkerRush"
                     else UnitRole.CONTROL_GROUP_EIGHT
                 )
 
