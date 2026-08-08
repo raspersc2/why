@@ -188,5 +188,5 @@ class WorkerRush(OpeningBase):
                         )
                     elif len(close_healing) >= 2:
                         worker(AbilityId.STOP)
-                    else:
+                    elif len(healing) >= 1:
                         worker.move(Point2(cy_center(healing)))
