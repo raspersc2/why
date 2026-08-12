@@ -83,7 +83,7 @@ class WorkerCombat(BaseCombat):
                 target_unit: Unit | None = None
                 if only_enemy_units and len(only_enemy_units) >= 3:
                     target_unit = cy_closest_to(unit.position, only_enemy_units)
-                elif close_supply:
+                elif close_supply and ramp_walled_off:
                     target_unit = cy_closest_to(unit.position, close_supply)
                 elif can_attack_structures and enemy_structures:
                     target_unit = cy_closest_to(unit.position, enemy_structures)
